@@ -10,7 +10,7 @@ import MonsterDetails from './MonsterDetails.vue'
 import CombatTracker from './combatTracker.vue'
 import CharacterStatBlock from './CharacterStatBlock.vue' // IMPORTA IL NUOVO COMPONENTE
 
-// --- Setup dello Store (solo per la lista) --- //
+// --- Setup dello Store (solo per la lista) ---
 const adventureStore = useAdventureStore()
 const { adventuresList } = storeToRefs(adventureStore)
 const { subscribeToAdventures, createNewAdventure, deleteAdventure, clearStore } = adventureStore
