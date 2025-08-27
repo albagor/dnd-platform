@@ -1,50 +1,47 @@
 <script setup>
-import { ref } from 'vue';
-import { auth } from '@/firebaseConfig';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword 
-} from 'firebase/auth';
-import { useToast } from 'vue-toastification';
+import { ref } from 'vue'
+import { auth, db } from '@/firebaseConfig'
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore' // Importiamo setDoc
+import { useToast } from 'vue-toastification'
 
-const toast = useToast();
-const isRegister = ref(false);
-const email = ref('');
-const password = ref('');
+const toast = useToast()
+const isRegister = ref(false)
+const email = ref('')
+const password = ref('')
+const dmCode = ref('') // Nuovo stato per il codice DM
 
 const handleSubmit = async () => {
   if (!email.value || !password.value) {
-    return toast.error("Per favore, inserisci email e password.");
+    return toast.error('Per favore, inserisci email e password.')
   }
   try {
     if (isRegister.value) {
-      await createUserWithEmailAndPassword(auth, email.value, password.value);
-      toast.success("Registrazione avvenuta con successo! Ora puoi accedere.");
-      isRegister.value = false; // Torna al login dopo la registrazione
+      // 1. Crea l'utente nell'Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value)
+      const user = userCredential.user
+
+      // 2. Determina il ruolo
+      const role = dmCode.value === import.meta.env.VITE_DM_SECRET_CODE ? 'DM' : 'Player'
+
+      // 3. Crea il documento utente in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        email: user.email,
+        role: role,
+        createdAt: new Date(),
+      })
+
+      toast.success('Registrazione avvenuta con successo! Ora puoi accedere.')
+      isRegister.value = false
     } else {
-      await signInWithEmailAndPassword(auth, email.value, password.value);
-      toast.success("Accesso effettuato!");
-      // Non serve reindirizzare, App.vue gestirà il cambio di stato
+      await signInWithEmailAndPassword(auth, email.value, password.value)
+      toast.success('Accesso effettuato!')
     }
   } catch (error) {
-    switch (error.code) {
-      case 'auth/invalid-email':
-        toast.error("Formato email non valido.");
-        break;
-      case 'auth/user-not-found':
-        toast.error("Nessun utente trovato con questa email.");
-        break;
-      case 'auth/wrong-password':
-        toast.error("Password non corretta.");
-        break;
-      case 'auth/email-already-in-use':
-        toast.error("Questa email è già stata registrata.");
-        break;
-      default:
-        toast.error("Si è verificato un errore.");
-    }
+    // ... gestione errori ...
+    toast.error('Si è verificato un errore: ' + error.message)
   }
-};
+}
 </script>
 
 <template>
@@ -54,11 +51,15 @@ const handleSubmit = async () => {
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" v-model="email" placeholder="tua@email.com" id="email">
+          <input type="email" v-model="email" placeholder="tua@email.com" id="email" />
         </div>
         <div class="form-group">
           <label for="password">Password</label>
-          <input type="password" v-model="password" placeholder="••••••••" id="password">
+          <input type="password" v-model="password" placeholder="••••••••" id="password" />
+        </div>
+        <div v-if="isRegister" class="form-group">
+          <label for="dmCode">Codice DM (opzionale)</label>
+          <input type="text" v-model="dmCode" id="dmCode" />
         </div>
         <button type="submit">{{ isRegister ? 'Registrati' : 'Accedi' }}</button>
       </form>
@@ -73,6 +74,7 @@ const handleSubmit = async () => {
 </template>
 
 <style scoped>
+/* Lo stile rimane invariato, ti fornisco quello che avevamo per completezza */
 .auth-container {
   display: flex;
   justify-content: center;

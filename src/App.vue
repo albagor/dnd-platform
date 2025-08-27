@@ -5,14 +5,28 @@ import { auth } from '@/firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { useToast } from 'vue-toastification'
 import Auth from './components/Auth.vue'
+import { useUserStore } from './stores/userStore' // 1. Importa lo userStore
+import { useAdventureStore } from './stores/adventureStore'
+import { useDiceStore } from './stores/diceStore'
 
 const toast = useToast()
 const isLoggedIn = ref(false)
+const userStore = useUserStore() // 2. Inizializza lo store
+const adventureStore = useAdventureStore()
+const diceStore = useDiceStore()
 
-// Controlla lo stato dell'utente al caricamento e ogni volta che cambia
 onMounted(() => {
   onAuthStateChanged(auth, (user) => {
     isLoggedIn.value = !!user
+    if (user) {
+      // Se l'utente è loggato, carica i suoi dati e il suo ruolo
+      userStore.fetchUser(user)
+    } else {
+      // Se l'utente fa logout, pulisce tutti gli store
+      userStore.clearUser()
+      adventureStore.clearStore()
+      diceStore.clearStore()
+    }
   })
 })
 
@@ -33,8 +47,8 @@ const handleLogout = async () => {
         <nav>
           <RouterLink to="/">Scheda Personaggio</RouterLink>
           <RouterLink to="/dadi">Lancia-Dadi</RouterLink>
-          <RouterLink to="/avventure">Avventure</RouterLink>
-          <RouterLink to="/generatore-ia">Generatore IA</RouterLink>
+          <RouterLink v-if="userStore.isDM" to="/avventure">Avventure</RouterLink>
+          <RouterLink v-if="userStore.isDM" to="/generatore-ia">Generatore IA</RouterLink>
           <a @click="handleLogout" class="logout-btn">Logout</a>
         </nav>
       </header>
