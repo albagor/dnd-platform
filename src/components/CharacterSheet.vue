@@ -27,6 +27,7 @@ const isInitialLoad = ref(true)
 const isAnagraficaOpen = ref(true)
 const isStatsOpen = ref(true)
 const isCombatOpen = ref(true)
+const isResourcesOpen = ref(true) // <-- Variabile che mancava
 const isSkillsOpen = ref(true)
 const isFeaturesOpen = ref(true)
 const isInventoryOpen = ref(true)
@@ -107,16 +108,16 @@ const abilityAbbreviations = {
 
 const { makeCheck } = useDiceRoller()
 
-// STRUTTURA DATI PRINCIPALE
-const character = ref({
+// STRUTTURA DATI DI DEFAULT COMPLETA
+const defaultCharacter = {
   header: {
-    name: 'Aelar',
-    playerName: 'Il Tuo Nome',
-    classes: [{ name: 'Mago', level: 3, subclass: '' }],
-    race: 'Umano',
+    name: '',
+    playerName: '',
+    classes: [{ name: '', level: 1, subclass: '' }],
+    race: '',
     subrace: '',
-    background: 'Accolito',
-    alignment: 'Legale Buono',
+    background: '',
+    alignment: '',
     experience: 0,
     inspiration: 0,
     appearance: {
@@ -132,11 +133,11 @@ const character = ref({
     },
   },
   abilityScores: {
-    strength: { score: 8 },
-    dexterity: { score: 14 },
-    constitution: { score: 12 },
-    intelligence: { score: 16 },
-    wisdom: { score: 13 },
+    strength: { score: 10 },
+    dexterity: { score: 10 },
+    constitution: { score: 10 },
+    intelligence: { score: 10 },
+    wisdom: { score: 10 },
     charisma: { score: 10 },
   },
   passivePerceptionBonus: 0,
@@ -144,17 +145,17 @@ const character = ref({
     strength: { proficient: false },
     dexterity: { proficient: false },
     constitution: { proficient: false },
-    intelligence: { proficient: true },
-    wisdom: { proficient: true },
+    intelligence: { proficient: false },
+    wisdom: { proficient: false },
     charisma: { proficient: false },
   },
   skills: {
     acrobatics: { proficient: false },
     animalHandling: { proficient: false },
-    arcana: { proficient: true },
+    arcana: { proficient: false },
     athletics: { proficient: false },
     deception: { proficient: false },
-    history: { proficient: true },
+    history: { proficient: false },
     insight: { proficient: false },
     intimidation: { proficient: false },
     investigation: { proficient: false },
@@ -173,49 +174,39 @@ const character = ref({
     initiative: 0,
     speedBonusMeters: 0,
     customAcBonuses: [],
-    hp: { max: 15, current: 15, temporary: 0 },
+    hp: { max: 10, current: 10, temporary: 0 },
     deathSaves: { successes: 0, failures: 0 },
     fightingStyles: [],
   },
-  proficiencies: {
-    manualArmor: [],
-    manualWeapons: [],
-    manualTools: [],
-    manualLanguages: ['Comune', 'Elfico'],
+  classResources: {
+    rageUses: { current: 0 },
+    bardicInspiration: { current: 0 },
+    kiPoints: { current: 0 },
+    sorceryPoints: { current: 0 },
+    layOnHandsPool: { current: 0 },
+    channelDivinity: { used: 0 },
+    secondWind: { used: false },
+    actionSurge: { used: false },
+    arcaneRecovery: { used: false },
+    wildShapeUses: { used: 0 },
+    superiorityDice: { current: 0 },
   },
+  proficiencies: { manualArmor: [], manualWeapons: [], manualTools: [], manualLanguages: [] },
   personality: { traits: '', ideals: '', bonds: '', flaws: '' },
   features: [],
   equipment: {
     weapons: [],
     defensiveItems: [],
-    money: { cp: 0, sp: 0, ep: 0, gp: 15, pp: 0 },
+    money: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
     inventory: [],
     otherTreasure: '',
     notes: '',
   },
   spellcasting: {
-    spellbook: {
-      0: [
-        { name: 'Luce', prepared: true },
-        { name: 'Mano Magica', prepared: true },
-        { name: 'Dardo di Fuoco', prepared: true },
-      ],
-      1: [
-        { name: 'Dardo Incantato', prepared: true },
-        { name: 'Scudo', prepared: false },
-      ],
-      2: [],
-      3: [],
-      4: [],
-      5: [],
-      6: [],
-      7: [],
-      8: [],
-      9: [],
-    },
+    spellbook: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] },
     spellSlots: {
-      1: { total: 4, used: 0 },
-      2: { total: 2, used: 0 },
+      1: { total: 0, used: 0 },
+      2: { total: 0, used: 0 },
       3: { total: 0, used: 0 },
       4: { total: 0, used: 0 },
       5: { total: 0, used: 0 },
@@ -228,7 +219,8 @@ const character = ref({
   customRacialTraits: [],
   customClassFeatures: [],
   companions: [],
-})
+}
+const character = ref(JSON.parse(JSON.stringify(defaultCharacter)))
 
 // LOGICA FIREBASE
 onMounted(async () => {
@@ -237,7 +229,18 @@ onMounted(async () => {
     const docRef = doc(db, 'characterSheets', userId)
     const docSnap = await getDoc(docRef)
     if (docSnap.exists()) {
-      character.value = docSnap.data()
+      const loadedData = docSnap.data()
+      const mergedCharacter = {
+        ...defaultCharacter,
+        ...loadedData,
+        header: { ...defaultCharacter.header, ...loadedData.header },
+        abilityScores: { ...defaultCharacter.abilityScores, ...loadedData.abilityScores },
+        combat: { ...defaultCharacter.combat, ...loadedData.combat },
+        classResources: { ...defaultCharacter.classResources, ...loadedData.classResources },
+        equipment: { ...defaultCharacter.equipment, ...loadedData.equipment },
+        spellcasting: { ...defaultCharacter.spellcasting, ...loadedData.spellcasting },
+      }
+      character.value = mergedCharacter
       toast.success('Scheda personaggio caricata!')
     } else {
       toast.info('Benvenuto! Compila la tua scheda, verrà salvata automaticamente.')
@@ -248,17 +251,14 @@ onMounted(async () => {
   }
 })
 
-// SALVATAGGIO AUTOMATICO (CORRETTO)
 watch(
   character,
   async (newData) => {
-    // Questa funzione ora salva SEMPRE, tranne la primissima volta che i dati vengono caricati.
-    // L'errore era aggiungere '!isInitialLoad.value' qui.
     if (auth.currentUser) {
       const userId = auth.currentUser.uid
       const docRef = doc(db, 'characterSheets', userId)
       try {
-        await setDoc(docRef, newData)
+        await setDoc(docRef, JSON.parse(JSON.stringify(newData)))
       } catch (error) {
         console.error('Errore durante il salvataggio automatico:', error)
         toast.error('Errore nel salvataggio della scheda.')
@@ -268,18 +268,75 @@ watch(
   { deep: true },
 )
 
-// WATCHER SOTTO-RAZZA (CORRETTO)
 watch(
   () => character.value.header.race,
   (newRace, oldRace) => {
-    // Questa funzione si blocca da sola durante il caricamento iniziale.
     if (!isInitialLoad.value && newRace !== oldRace) {
       character.value.header.subrace = ''
     }
   },
 )
 
-// FUNZIONI E COMPUTED PROPERTIES (TUTTO IL RESTO UGUALE)
+// FUNZIONI E COMPUTED PER RISORSE DI CLASSE
+const getClassLevel = (className) => {
+  const charClass = character.value.header.classes.find((c) => c.name === className)
+  return charClass ? Number(charClass.level) || 0 : 0
+}
+const maxRageUses = computed(() => {
+  const level = getClassLevel('Barbaro')
+  if (level === 0) return 0
+  if (level < 3) return 2
+  if (level < 6) return 3
+  if (level < 12) return 4
+  if (level < 20) return 5
+  return Infinity
+})
+const maxBardicInspiration = computed(() => {
+  const level = getClassLevel('Bardo')
+  return level > 0 ? Math.max(1, abilityModifiers.value.charisma) : 0
+})
+const maxKiPoints = computed(() => getClassLevel('Monaco'))
+const maxSorceryPoints = computed(() => getClassLevel('Stregone'))
+const layOnHandsPool = computed(() => getClassLevel('Paladino') * 5)
+const maxChannelDivinity = computed(() => {
+  const clericLevel = getClassLevel('Chierico')
+  const paladinLevel = getClassLevel('Paladino')
+  if (clericLevel === 0 && paladinLevel === 0) return 0
+  if (clericLevel < 6 || paladinLevel < 6) return 1
+  if (clericLevel < 18) return 2
+  return 3
+})
+const maxSuperiorityDice = computed(() => {
+  const hasSubclass = character.value.header.classes.some(
+    (c) => c.subclass === 'Maestro di Battaglia',
+  )
+  if (!hasSubclass) return 0
+  const level = getClassLevel('Guerriero')
+  if (level < 7) return 4
+  if (level < 15) return 5
+  return 6
+})
+function resetResources() {
+  if (!character.value.classResources) {
+    character.value.classResources = JSON.parse(JSON.stringify(defaultCharacter.classResources))
+  }
+  const resources = character.value.classResources
+  if (maxRageUses.value > 0) resources.rageUses.current = maxRageUses.value
+  if (maxBardicInspiration.value > 0)
+    resources.bardicInspiration.current = maxBardicInspiration.value
+  if (maxKiPoints.value > 0) resources.kiPoints.current = maxKiPoints.value
+  if (maxSorceryPoints.value > 0) resources.sorceryPoints.current = maxSorceryPoints.value
+  if (layOnHandsPool.value > 0) resources.layOnHandsPool.current = layOnHandsPool.value
+  if (maxChannelDivinity.value > 0) resources.channelDivinity.used = 0
+  resources.secondWind.used = false
+  resources.actionSurge.used = false
+  resources.arcaneRecovery.used = false
+  if (getClassLevel('Druido') > 1) resources.wildShapeUses.used = 0
+  if (maxSuperiorityDice.value > 0) resources.superiorityDice.current = maxSuperiorityDice.value
+  toast.success('Risorse ripristinate!')
+}
+
+// FUNZIONI E COMPUTED PROPERTIES ESISTENTI
 function addSpellFromGrimoire({ level, name }) {
   const spellList = character.value.spellcasting.spellbook[level]
   if (spellList && !spellList.some((spell) => spell.name === name)) {
@@ -798,8 +855,8 @@ const spellAttackBonus = computed(() =>
         <div class="section-divider"><h4>Personalità</h4></div>
         <div class="anagrafica-grid">
           <div class="grid-item full-width">
-            <label>Tratti Caratteriali</label>
-            <textarea v-model="character.personality.traits"></textarea>
+            <label>Tratti Caratteriali</label
+            ><textarea v-model="character.personality.traits"></textarea>
           </div>
           <div class="grid-item full-width">
             <label>Ideali</label> <textarea v-model="character.personality.ideals"></textarea>
@@ -898,7 +955,6 @@ const spellAttackBonus = computed(() =>
             <label>Dadi Vita</label>
             <span class="calculated-field">{{ hitDicePool }}</span>
           </div>
-
           <div class="grid-item ac-details full-width">
             <div class="section-divider"><h4>Equipaggiamento Difensivo</h4></div>
             <div class="add-item-section">
@@ -913,23 +969,21 @@ const spellAttackBonus = computed(() =>
                 Manuale
               </button>
             </div>
-
             <div class="defensive-item-list">
               <div
                 v-for="item in character.equipment.defensiveItems"
                 :key="item.id"
                 class="defensive-item-row"
               >
-                <label class="equip-label">
-                  <input type="checkbox" v-model="item.isEquipped" @change="equipItem(item)" />
-                  Equip
-                </label>
+                <label class="equip-label"
+                  ><input type="checkbox" v-model="item.isEquipped" @change="equipItem(item)" />
+                  Equip</label
+                >
                 <span class="item-name">{{ item.name }} ({{ item.type }})</span>
                 <span class="item-ac">AC: {{ item.ac }}</span>
                 <button @click="removeDefensiveItem(item.id)" class="remove-btn small">-</button>
               </div>
             </div>
-
             <div class="bonus-list">
               <label>Bonus Personalizzati alla CA</label>
               <div
@@ -949,16 +1003,119 @@ const spellAttackBonus = computed(() =>
             </div>
           </div>
         </div>
-
-        <div class="section-divider">
-          <h4>Attacchi e Armi</h4>
-        </div>
-
+        <div class="section-divider"><h4>Attacchi e Armi</h4></div>
         <CombatSection
           :character="character"
           :ability-modifiers="abilityModifiers"
           :proficiency-bonus="proficiencyBonusByLevel"
         />
+      </div>
+    </section>
+
+    <section class="box">
+      <div class="section-header" @click="isResourcesOpen = !isResourcesOpen">
+        <h3>Risorse di Classe</h3>
+        <button @click.stop="resetResources" class="reset-btn">Riposo Lungo</button>
+        <span class="toggle-icon">{{ isResourcesOpen ? '▼' : '▶' }}</span>
+      </div>
+      <div v-if="isResourcesOpen" class="section-content class-resources-grid">
+        <div v-if="getClassLevel('Barbaro') > 0" class="resource-item">
+          <label>Usi Ira</label>
+          <div class="resource-tracker">
+            <input type="number" v-model.number="character.classResources.rageUses.current" /><span
+              >/ {{ maxRageUses === Infinity ? '∞' : maxRageUses }}</span
+            >
+          </div>
+        </div>
+        <div v-if="getClassLevel('Bardo') > 0" class="resource-item">
+          <label>Ispirazione Bardica</label>
+          <div class="resource-tracker">
+            <input
+              type="number"
+              v-model.number="character.classResources.bardicInspiration.current"
+            /><span>/ {{ maxBardicInspiration }}</span>
+          </div>
+        </div>
+        <div
+          v-if="getClassLevel('Chierico') > 1 || getClassLevel('Paladino') > 2"
+          class="resource-item"
+        >
+          <label>Incanalare Divinità</label>
+          <div class="resource-tracker">
+            <input
+              type="number"
+              v-model.number="character.classResources.channelDivinity.used"
+            /><span>/ {{ maxChannelDivinity }} Usati</span>
+          </div>
+        </div>
+        <div v-if="getClassLevel('Druido') > 1" class="resource-item">
+          <label>Usi Forma Selvatica</label>
+          <div class="resource-tracker">
+            <input
+              type="number"
+              v-model.number="character.classResources.wildShapeUses.used"
+            /><span>/ 2 Usati</span>
+          </div>
+        </div>
+        <div v-if="getClassLevel('Guerriero') > 0" class="resource-item check-item">
+          <label for="secondWind">Recuperare Energie</label>
+          <input
+            type="checkbox"
+            id="secondWind"
+            v-model="character.classResources.secondWind.used"
+          /><span>Usato</span>
+        </div>
+        <div v-if="getClassLevel('Guerriero') > 1" class="resource-item check-item">
+          <label for="actionSurge">Azione Impetuosa</label>
+          <input
+            type="checkbox"
+            id="actionSurge"
+            v-model="character.classResources.actionSurge.used"
+          /><span>Usato</span>
+        </div>
+        <div v-if="maxSuperiorityDice > 0" class="resource-item">
+          <label>Dadi di Superiorità</label>
+          <div class="resource-tracker">
+            <input
+              type="number"
+              v-model.number="character.classResources.superiorityDice.current"
+            /><span>/ {{ maxSuperiorityDice }}</span>
+          </div>
+        </div>
+        <div v-if="getClassLevel('Monaco') > 1" class="resource-item">
+          <label>Punti Ki</label>
+          <div class="resource-tracker">
+            <input type="number" v-model.number="character.classResources.kiPoints.current" /><span
+              >/ {{ maxKiPoints }}</span
+            >
+          </div>
+        </div>
+        <div v-if="getClassLevel('Paladino') > 0" class="resource-item">
+          <label>Imposizione delle Mani</label>
+          <div class="resource-tracker">
+            <input
+              type="number"
+              v-model.number="character.classResources.layOnHandsPool.current"
+            /><span>/ {{ layOnHandsPool }}</span>
+          </div>
+        </div>
+        <div v-if="getClassLevel('Stregone') > 1" class="resource-item">
+          <label>Punti Stregoneria</label>
+          <div class="resource-tracker">
+            <input
+              type="number"
+              v-model.number="character.classResources.sorceryPoints.current"
+            /><span>/ {{ maxSorceryPoints }}</span>
+          </div>
+        </div>
+        <div v-if="getClassLevel('Mago') > 0" class="resource-item check-item">
+          <label for="arcaneRecovery">Recupero Arcano</label>
+          <input
+            type="checkbox"
+            id="arcaneRecovery"
+            v-model="character.classResources.arcaneRecovery.used"
+          /><span>Usato</span>
+        </div>
       </div>
     </section>
 
@@ -977,10 +1134,12 @@ const spellAttackBonus = computed(() =>
             >
               {{ skillModifiers[key] >= 0 ? '+' : '' }}{{ skillModifiers[key] }}
             </button>
-            <label>
-              {{ translations[key] }}
-              <span class="ability-hint">({{ abilityAbbreviations[skillAbilityMap[key]] }})</span>
-            </label>
+            <label
+              >{{ translations[key]
+              }}<span class="ability-hint"
+                >({{ abilityAbbreviations[skillAbilityMap[key]] }})</span
+              ></label
+            >
           </li>
         </ul>
         <div class="passive-perception-column">
@@ -1148,16 +1307,14 @@ const spellAttackBonus = computed(() =>
             </div>
           </div>
           <div class="spell-actions">
-            <button @click="isGrimoireOpen = true" class="grimoire-btn">Apri Grimorio</button>
-            <button @click="resetUsedSlots" class="long-rest-btn">Riposo Lungo</button>
+            <button @click="isGrimoireOpen = true" class="grimoire-btn">Apri Grimorio</button
+            ><button @click="resetUsedSlots" class="long-rest-btn">Riposo Lungo</button>
           </div>
         </div>
-
         <div class="spell-slots-grid">
           <div class="spell-level-column">
             <div class="spell-level-header">
-              <span class="level-indicator">0</span>
-              <label>Trucchetti</label>
+              <span class="level-indicator">0</span><label>Trucchetti</label>
             </div>
             <ul class="spell-list">
               <li
@@ -1186,7 +1343,6 @@ const spellAttackBonus = computed(() =>
               </li>
             </ul>
           </div>
-
           <div v-for="level in 9" :key="level" class="spell-level-column">
             <div class="spell-level-header">
               <span class="level-indicator">{{ level }}</span>
@@ -1213,9 +1369,9 @@ const spellAttackBonus = computed(() =>
                 <div class="spell-card-header">
                   <strong>{{ spell.name }}</strong>
                   <div class="spell-controls">
-                    <label class="prepare-label">
-                      <input type="checkbox" v-model="spell.prepared" /> Prep.
-                    </label>
+                    <label class="prepare-label"
+                      ><input type="checkbox" v-model="spell.prepared" /> Prep.</label
+                    >
                     <button
                       @click="castSpell(level)"
                       :disabled="
@@ -1285,8 +1441,8 @@ const spellAttackBonus = computed(() =>
             <label>Nome</label><input type="text" v-model="newCustomDefensiveItem.name" />
           </div>
           <div class="grid-item">
-            <label>Categoria</label>
-            <select v-model="newCustomDefensiveItem.category">
+            <label>Categoria</label
+            ><select v-model="newCustomDefensiveItem.category">
               <option>Armatura</option>
               <option>Scudo</option>
             </select>
@@ -2120,5 +2276,58 @@ textarea {
   .spell-slots-grid {
     grid-template-columns: 1fr;
   }
+}
+/* --- INIZIO STILI PER NUOVA SEZIONE RISORSE --- */
+.class-resources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+.resource-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: #f0f0f0;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+}
+.resource-item label {
+  font-weight: bold;
+  font-size: 0.9em;
+}
+.resource-tracker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.resource-tracker input {
+  width: 60px;
+  text-align: center;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+.resource-tracker span {
+  font-size: 1.1em;
+  color: #555;
+}
+.check-item {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.check-item input[type='checkbox'] {
+  width: auto;
+  margin: 0;
+}
+.reset-btn {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 0.8em;
+  cursor: pointer;
 }
 </style>
