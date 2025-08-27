@@ -1323,7 +1323,8 @@ const spellAttackBonus = computed(() =>
   color: #000;
   border-radius: 10px;
   padding: 15px;
-  width: 900px;
+  width: 100%; /* MODIFICATO: Permette al contenitore di restringersi */
+  max-width: 900px; /* MODIFICATO: Mantiene la larghezza massima su schermi grandi */
   font-family: serif;
   margin: 2rem auto;
 }
@@ -1455,7 +1456,6 @@ textarea {
   font-size: 0.9em;
   margin-top: 10px;
 }
-
 .appearance-section {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -1491,7 +1491,6 @@ textarea {
   color: #aaa;
   font-family: sans-serif;
 }
-
 .stats-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -1550,32 +1549,28 @@ textarea {
   min-width: 30px;
   text-align: center;
 }
-
-/* NUOVI STILI PER I PULSANTI DI TIRO */
 .roll-button {
   cursor: pointer;
   transition:
     background-color 0.2s,
     color 0.2s,
     border-color 0.2s;
-  /* Reset per i tag <button> per farli apparire come il testo normale */
   background: none;
   font-family: inherit;
   padding: 0;
   margin: 0;
   color: inherit;
-  border: 1px solid transparent; /* Aggiunto per un hover più pulito */
+  border: 1px solid transparent;
 }
 .roll-button:hover {
   background-color: #8e44ad;
-  color: white !important; /* !important per sovrascrivere altri stili di colore */
+  color: white !important;
   border-color: #7d359d;
 }
-/* Adattamenti per mantenere lo stile originale quando non in hover */
 .stat-box .roll-button.modifier {
   border: 1px solid #000;
   padding: 2px 0;
-  display: block; /* Assicura che occupi tutta la larghezza del box */
+  display: block;
   width: 100%;
 }
 .saving-throws .roll-button,
@@ -1598,10 +1593,8 @@ textarea {
   font-weight: bold;
 }
 .combat-grid .roll-button.calculated-field:hover {
-  border: none; /* Assicura che non appaia un bordo strano in hover */
+  border: none;
 }
-/* FINE NUOVI STILI PER I PULSANTI DI TIRO */
-
 .block-label {
   display: block;
   text-align: center;
@@ -1835,7 +1828,6 @@ textarea {
   font-size: 0.9em;
   cursor: pointer;
 }
-
 .companion-sheet {
   border: 1px solid #bca789;
   background-color: #fdfaf6;
@@ -1946,7 +1938,6 @@ textarea {
   padding: 2px 6px;
   border-radius: 50%;
 }
-
 .spell-main-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr) auto;
@@ -2039,7 +2030,6 @@ textarea {
   flex-grow: 1;
   overflow-y: auto;
 }
-
 .spell-card {
   background-color: #f9f9f9;
   border: 1px solid #eee;
@@ -2108,5 +2098,27 @@ textarea {
   padding-top: 4px;
   margin-top: 4px;
   border-top: 1px dotted #eee;
+}
+
+/* --- INIZIO REGOLE RESPONSIVE AGGIUNTE --- */
+@media (max-width: 992px) {
+  /* Breakpoint più grande per accomodare il layout complesso */
+  .grid-main,
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .anagrafica-grid,
+  .appearance-section,
+  .appearance-grid,
+  .combat-grid,
+  .skills-section-grid {
+    grid-template-columns: 1fr; /* Impila tutto in una sola colonna */
+  }
+  .spell-slots-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
