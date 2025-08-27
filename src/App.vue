@@ -1,3 +1,53 @@
+<script setup>
+import { ref, onMounted } from 'vue'
+import { RouterLink, RouterView } from 'vue-router'
+import { auth } from '@/firebaseConfig'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { useToast } from 'vue-toastification'
+import Auth from './components/Auth.vue'
+
+const toast = useToast()
+const isLoggedIn = ref(false)
+
+// Controlla lo stato dell'utente al caricamento e ogni volta che cambia
+onMounted(() => {
+  onAuthStateChanged(auth, (user) => {
+    isLoggedIn.value = !!user
+  })
+})
+
+const handleLogout = async () => {
+  try {
+    await signOut(auth)
+    toast.info('Sei stato disconnesso.')
+  } catch (error) {
+    toast.error('Errore durante il logout.')
+  }
+}
+</script>
+
+<template>
+  <div v-if="isLoggedIn">
+    <div id="app-layout">
+      <header>
+        <nav>
+          <RouterLink to="/">Scheda Personaggio</RouterLink>
+          <RouterLink to="/dadi">Lancia-Dadi</RouterLink>
+          <RouterLink to="/avventure">Avventure</RouterLink>
+          <RouterLink to="/generatore-ia">Generatore IA</RouterLink>
+          <a @click="handleLogout" class="logout-btn">Logout</a>
+        </nav>
+      </header>
+      <main class="responsive-layout">
+        <RouterView />
+      </main>
+    </div>
+  </div>
+  <div v-else>
+    <Auth />
+  </div>
+</template>
+
 <style>
 /* Stili globali per l'intera applicazione */
 body {
