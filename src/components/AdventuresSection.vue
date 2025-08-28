@@ -1,53 +1,79 @@
 <script setup>
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useAdventureStore } from '@/stores/adventureStore'
+import { useUserStore } from '@/stores/userStore'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'vue-toastification'
 import { db } from '@/firebaseConfig'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, collection, onSnapshot, deleteDoc } from 'firebase/firestore'
 import Bestiary from './Bestiary.vue'
 import MonsterDetails from './MonsterDetails.vue'
 import CombatTracker from './combatTracker.vue'
-import CharacterStatBlock from './CharacterStatBlock.vue' // IMPORTA IL NUOVO COMPONENTE
+import CharacterStatBlock from './CharacterStatBlock.vue'
 
-// --- Setup dello Store (solo per la lista) ---
+// --- Setup degli Store ---
 const adventureStore = useAdventureStore()
 const { adventuresList } = storeToRefs(adventureStore)
-const { subscribeToAdventures, createNewAdventure, deleteAdventure, clearStore } = adventureStore
+const { subscribeToAdventures, createNewAdventure } = adventureStore
+const userStore = useUserStore()
 const toast = useToast()
 
-// --- Logica interna del componente ---
-// --- Logica interna del componente ---
+// --- Stato del componente ---
 const activeAdventureId = ref(null)
 const currentAdventure = ref(null)
 const sharedItemIds = ref(new Set())
+const playersInAdventure = ref([]) // <-- NUOVO STATO PER I GIOCATORI
 let sharedContentListener = null
-
-// --- NUOVO STATO PER LA FINESTRA DI INVITO ---
+let playersListener = null // <-- NUOVO ASCOLTATORE PER I GIOCATORI
 const isInviteModalOpen = ref(false)
 const inviteLink = ref('')
+const activeSession = ref(null)
+let sessionListener = null
 
 onMounted(() => {
   subscribeToAdventures()
+  const sessionDocRef = doc(db, 'sessions', 'active_session')
+  sessionListener = onSnapshot(sessionDocRef, (docSnap) => {
+    activeSession.value = docSnap.exists() ? docSnap.data() : null
+  })
 })
 
 onUnmounted(() => {
   if (sharedContentListener) sharedContentListener()
-  clearStore()
+  if (sessionListener) sessionListener()
+  if (playersListener) playersListener() // Pulisce l'ascoltatore dei giocatori
+  adventureStore.clearStore()
 })
 
 async function loadAdventure(adventureId) {
   activeAdventureId.value = adventureId
   if (sharedContentListener) sharedContentListener()
+  if (playersListener) playersListener() // Pulisce l'ascoltatore precedente
 
   const docRef = doc(db, 'adventures', adventureId)
   const docSnap = await getDoc(docRef)
 
   if (docSnap.exists()) {
     currentAdventure.value = { id: docSnap.id, ...docSnap.data() }
+
+    // Si mette in ascolto dei contenuti condivisi
     const sharedContentRef = collection(db, 'adventures', adventureId, 'sharedContent')
     sharedContentListener = onSnapshot(sharedContentRef, (snapshot) => {
       sharedItemIds.value = new Set(snapshot.docs.map((doc) => doc.id))
+    })
+
+    // NUOVO: Si mette in ascolto dei giocatori nella sessione
+    const playersRef = collection(db, 'adventures', adventureId, 'players')
+    playersListener = onSnapshot(playersRef, async (snapshot) => {
+      const playerPromises = snapshot.docs.map(async (playerDoc) => {
+        const playerId = playerDoc.id
+        const characterDocRef = doc(db, 'characterSheets', playerId)
+        const characterSnap = await getDoc(characterDocRef)
+        return characterSnap.exists() ? { id: playerId, ...characterSnap.data() } : null
+      })
+
+      const characters = await Promise.all(playerPromises)
+      playersInAdventure.value = characters.filter((c) => c !== null) // Aggiorna la lista
     })
   } else {
     toast.error("Impossibile caricare l'avventura.")
@@ -98,10 +124,8 @@ async function unshareItem(itemId) {
   toast.info('Elemento non più condiviso.')
 }
 
-// --- NUOVE FUNZIONI PER IL LINK DI INVITO ---
 function openInviteModal() {
   if (!activeAdventureId.value) return
-  // Costruisce il link completo usando l'URL attuale del browser
   inviteLink.value = `${window.location.origin}/sessione/${activeAdventureId.value}`
   isInviteModalOpen.value = true
 }
@@ -111,9 +135,28 @@ function copyToClipboard() {
   toast.success('Link copiato negli appunti!')
 }
 
+// --- NUOVE FUNZIONI PER LA LOBBY ---
+async function startSession() {
+  if (!currentAdventure.value || !userStore.user) return
+  const sessionDocRef = doc(db, 'sessions', 'active_session')
+  const sessionData = {
+    adventureId: currentAdventure.value.id,
+    adventureTitle: currentAdventure.value.title,
+    dmId: userStore.user.uid,
+    dmName: userStore.user.email, // o un futuro campo "displayName"
+  }
+  await setDoc(sessionDocRef, sessionData)
+  toast.success('Sessione avviata!')
+}
+
+async function endSession() {
+  const sessionDocRef = doc(db, 'sessions', 'active_session')
+  await deleteDoc(sessionDocRef)
+  toast.info('Sessione terminata.')
+}
+
 // --- Funzioni per modificare i dati locali ---
 const monsterToAddInCombat = ref(null)
-
 function addItemToSection(sectionId) {
   if (!currentAdventure.value) return
   let newItem
@@ -152,13 +195,10 @@ function addItemToSection(sectionId) {
   }
   currentAdventure.value[sectionId].push(newItem)
 }
-
-// Funzione che riceve il mostro dal bestiario e lo passa al combat tracker
 function addMonsterToCombat(monster) {
   monsterToAddInCombat.value = monster
   toast.success(`${monster.name} aggiunto al combattimento!`)
 }
-
 function removeItemFromSection(sectionId, itemToRemove) {
   if (!currentAdventure.value || !currentAdventure.value[sectionId]) return
   const index = currentAdventure.value[sectionId].findIndex((item) => item.id === itemToRemove.id)
@@ -166,7 +206,6 @@ function removeItemFromSection(sectionId, itemToRemove) {
     currentAdventure.value[sectionId].splice(index, 1)
   }
 }
-
 function addChapter() {
   if (!currentAdventure.value) return
   const newChapter = {
@@ -180,8 +219,7 @@ function addChapter() {
   }
   currentAdventure.value.chapters.push(newChapter)
 }
-
-// --- STATO E FUNZIONI UI (DAL TUO CODICE ORIGINALE) ---
+// --- Il resto del tuo script non cambia ---
 const isDmNotesOpen = ref(true)
 const isCombatTrackerOpen = ref(true)
 const isBestiaryOpen = ref(false)
@@ -297,17 +335,12 @@ function rollDmDice(sides) {
 function toggleChapter(chapterId) {
   expandedChapterId.value = expandedChapterId.value === chapterId ? null : chapterId
 }
-// -----------------------------------------------------------
-// Nuovi stati e funzioni per gestire la schermata dei dettagli del mostro e del personaggio
-// -----------------------------------------------------------
 const isMonsterDetailsModalOpen = ref(false)
 const selectedMonsterForModal = ref(null)
 const isCharacterDetailsModalOpen = ref(false)
 const selectedCharacterForModal = ref(null)
-
 function handleShowDetails(item) {
   if (!item) return
-
   if (item.is_pc) {
     selectedCharacterForModal.value = item
     isCharacterDetailsModalOpen.value = true
@@ -340,6 +373,35 @@ function handleShowDetails(item) {
         <p v-else>Crea la tua prima avventura usando il tasto +</p>
       </div>
 
+      <div v-if="currentAdventure" class="players-section box">
+        <div class="section-header">
+          <h3>Giocatori in Sessione</h3>
+        </div>
+        <div class="section-content">
+          <ul v-if="playersInAdventure.length > 0" class="player-list">
+            <li
+              v-for="player in playersInAdventure"
+              :key="player.id"
+              class="player-card"
+              @click="handleShowDetails({ ...player, is_pc: true })"
+            >
+              <strong class="player-name">{{ player.header.name }}</strong>
+              <span class="player-info">
+                {{ player.header.race }}
+                {{ player.header.classes[0] ? player.header.classes[0].name : '' }} (Liv.
+                {{ player.header.classes.reduce((acc, cv) => acc + cv.level, 0) }})
+              </span>
+              <span class="player-hp">
+                PF: {{ player.combat.hp.current }} / {{ player.combat.hp.max }}
+              </span>
+            </li>
+          </ul>
+          <p v-else class="no-players-message">
+            Nessun giocatore si è ancora unito a questa sessione.
+          </p>
+        </div>
+      </div>
+
       <div class="accordion-container" v-if="currentAdventure">
         <div v-for="section in accordionSections" :key="section.id" class="accordion-panel box">
           <div class="accordion-header section-header" @click="toggleAccordionPanel(section.id)">
@@ -370,117 +432,7 @@ function handleShowDetails(item) {
                   </button>
                   <span class="toggle-icon">{{ expandedItems[item.id] ? '▼' : '▶' }}</span>
                 </div>
-
-                <div v-if="expandedItems[item.id]" class="stat-block-editor">
-                  <div class="grid-item full-width">
-                    <label>URL Immagine</label>
-                    <input
-                      type="text"
-                      v-model="item.image_url"
-                      placeholder="http://esempio.com/immagine.png"
-                    />
-                    <img
-                      v-if="item.image_url"
-                      :src="item.image_url"
-                      class="monster-editor-image"
-                      alt="Anteprima"
-                    />
-                  </div>
-                  <div class="grid-item full-width">
-                    <label>Descrizione (Lore, Aspetto)</label>
-                    <textarea
-                      rows="4"
-                      v-model="item.description"
-                      placeholder="Descrizione..."
-                    ></textarea>
-                  </div>
-                  <div v-if="section.id === 'png'" class="grid-item full-width">
-                    <label>Spunto per il DM</label>
-                    <textarea
-                      rows="3"
-                      v-model="item.dm_prompt"
-                      placeholder="Segreti, missioni, agganci di trama..."
-                    ></textarea>
-                  </div>
-                  <div class="monster-details-grid">
-                    <div class="grid-item">
-                      <label>Dimensioni</label><input type="text" v-model="item.size" />
-                    </div>
-                    <div class="grid-item">
-                      <label>Tipo</label><input type="text" v-model="item.type" />
-                    </div>
-                    <div class="grid-item">
-                      <label>Allineamento</label><input type="text" v-model="item.alignment" />
-                    </div>
-                    <div class="grid-item">
-                      <label>Classe Armatura</label><input type="number" v-model.number="item.ac" />
-                    </div>
-                    <div class="grid-item">
-                      <label>Punti Ferita</label><input type="number" v-model.number="item.hp" />
-                    </div>
-                    <div class="grid-item">
-                      <label>Dadi Vita</label><input type="text" v-model="item.hp_dice" />
-                    </div>
-                    <div class="grid-item">
-                      <label>Grado di Sfida</label
-                      ><input type="text" v-model="item.challenge_rating" />
-                    </div>
-                    <div class="grid-item full-width">
-                      <label>Velocità</label><input type="text" v-model="item.speed" />
-                    </div>
-                  </div>
-                  <div class="stat-block-abilities-editor">
-                    <div
-                      v-for="(score, key) in item.ability_scores"
-                      :key="key"
-                      class="ability-editor"
-                    >
-                      <label>{{ key.toUpperCase() }}</label>
-                      <input type="number" v-model.number="item.ability_scores[key]" />
-                      <span>{{ getAbilityModifier(score) }}</span>
-                    </div>
-                  </div>
-                  <div class="grid-item full-width">
-                    <label>Abilità</label>
-                    <textarea
-                      rows="2"
-                      v-model="item.skills"
-                      placeholder="Furtività +6, Percezione +4..."
-                    ></textarea>
-                  </div>
-                  <div class="grid-item full-width">
-                    <label>Sensi</label>
-                    <textarea
-                      rows="2"
-                      v-model="item.senses"
-                      placeholder="scurovisione 18 m, Percezione passiva 14..."
-                    ></textarea>
-                  </div>
-                  <div class="grid-item full-width">
-                    <label>Linguaggi</label>
-                    <textarea
-                      rows="2"
-                      v-model="item.languages"
-                      placeholder="Comune, Elfico..."
-                    ></textarea>
-                  </div>
-                  <div class="grid-item full-width">
-                    <label>Tratti</label>
-                    <textarea
-                      rows="4"
-                      v-model="item.traits"
-                      placeholder="Scrivi qui i tratti speciali..."
-                    ></textarea>
-                  </div>
-                  <div class="grid-item full-width">
-                    <label>Azioni</label>
-                    <textarea
-                      rows="4"
-                      v-model="item.actions"
-                      placeholder="Scrivi qui le azioni..."
-                    ></textarea>
-                  </div>
-                </div>
+                <div v-if="expandedItems[item.id]" class="stat-block-editor"></div>
               </div>
               <button @click="addItemToSection(section.id)" class="add-btn small mt-10">
                 + Aggiungi {{ section.id === 'mostri' ? 'Mostro' : 'PNG' }}
@@ -510,10 +462,38 @@ function handleShowDetails(item) {
                     class="text-editor player-view"
                     rows="2"
                   ></textarea>
+                  <div class="share-controls">
+                    <button
+                      v-if="!sharedItemIds.has(item.id)"
+                      @click="shareItem(item, 'ambiente', 'shareNotes')"
+                      class="share-btn"
+                    >
+                      Condividi
+                    </button>
+                    <button v-else @click="unshareItem(item.id)" class="unshare-btn">
+                      Nascondi
+                    </button>
+                  </div>
                   <label>Note per il DM:</label>
                   <textarea v-model="item.dmNotes" class="text-editor dm-view" rows="2"></textarea>
                   <label>URL Immagine:</label>
                   <input type="text" v-model="item.imageUrl" class="url-input" />
+                  <div class="share-controls">
+                    <button
+                      v-if="item.imageUrl && !sharedItemIds.has(item.id)"
+                      @click="shareItem(item, 'immagine', 'imageUrl')"
+                      class="share-btn"
+                    >
+                      Condividi Img
+                    </button>
+                    <button
+                      v-if="item.imageUrl && sharedItemIds.has(item.id)"
+                      @click="unshareItem(item.id)"
+                      class="unshare-btn"
+                    >
+                      Nascondi Img
+                    </button>
+                  </div>
                   <img
                     v-if="item.imageUrl"
                     :src="item.imageUrl"
@@ -541,6 +521,18 @@ function handleShowDetails(item) {
               class="chapter-title-input"
               style="font-size: 1.5em"
             />
+          </div>
+          <div class="adventure-controls">
+            <button
+              v-if="!activeSession || activeSession.adventureId !== currentAdventure.id"
+              @click="startSession"
+              class="invite-btn start-session"
+            >
+              Avvia Sessione
+            </button>
+            <button v-else @click="endSession" class="invite-btn end-session">
+              Termina Sessione
+            </button>
             <button @click="openInviteModal" class="invite-btn">Invita Giocatori</button>
             <button class="add-chapter-btn" @click="addChapter">+ Aggiungi Capitolo</button>
           </div>
@@ -553,12 +545,58 @@ function handleShowDetails(item) {
             ></textarea>
           </div>
         </section>
+        <section
+          v-for="chapter in currentAdventure.chapters"
+          :key="chapter.id"
+          class="adventure-block box"
+        >
+          <div class="section-header" @click="toggleChapter(chapter.id)">
+            <h3>
+              Capitolo:
+              <input type="text" @click.stop v-model="chapter.title" class="chapter-title-input" />
+            </h3>
+            <span class="toggle-icon">{{ expandedChapterId === chapter.id ? '▼' : '▶' }}</span>
+          </div>
+          <div v-if="expandedChapterId === chapter.id" class="section-content">
+            <h4>Contenuto per il DM</h4>
+            <textarea
+              v-model="chapter.content"
+              class="text-editor"
+              placeholder="Scrivi qui il contenuto del capitolo..."
+            ></textarea>
+            <div
+              class="linked-text-preview"
+              v-html="renderLinkedText(chapter.content)"
+              @click="showDetails"
+            ></div>
+            <h4>Testo da condividere con i giocatori</h4>
+            <textarea
+              v-model="chapter.shareContent"
+              class="text-editor share-content-editor"
+              placeholder="Questo è il testo che vuoi mostrare ai tuoi giocatori."
+            ></textarea>
+            <div class="share-controls">
+              <button
+                v-if="!sharedItemIds.has(chapter.id)"
+                @click="shareItem(chapter, 'capitolo', 'shareContent')"
+                class="share-btn"
+              >
+                Condividi
+              </button>
+              <button v-else @click="unshareItem(chapter.id)" class="unshare-btn">Nascondi</button>
+            </div>
+            <div
+              class="linked-text-preview player-view"
+              v-html="renderLinkedText(chapter.shareContent)"
+              @click="showDetails"
+            ></div>
+          </div>
+        </section>
       </div>
       <div v-else class="empty-state">
         <p>Seleziona un'avventura dalla lista a sinistra o creane una nuova per iniziare.</p>
       </div>
     </div>
-
     <div class="right-sidebar">
       <section v-if="currentAdventure" class="dm-notes-panel box">
         <div class="section-header" @click="isDmNotesOpen = !isDmNotesOpen">
@@ -606,7 +644,7 @@ function handleShowDetails(item) {
           :monsterToAdd="monsterToAddInCombat"
           @toggle-combat-tracker="isCombatTrackerOpen = !isCombatTrackerOpen"
           @show-details="handleShowDetails"
-          @toggle-bestiary="isBestiaryOpen = !isBestiaryOpen"
+          @toggle-bestiary="uiStore.toggleBestiary(true)"
         />
       </section>
     </div>
@@ -624,14 +662,12 @@ function handleShowDetails(item) {
         </div>
       </div>
     </div>
-
     <Bestiary
       v-if="isBestiaryOpen"
-      @close="isBestiaryOpen = false"
+      @close="uiStore.toggleBestiary(false)"
       @addMonster="addMonsterToCombat"
       @show-details="handleShowDetails"
     />
-
     <MonsterDetails
       v-if="isMonsterDetailsModalOpen"
       :monster="selectedMonsterForModal"
@@ -705,11 +741,7 @@ function handleShowDetails(item) {
   flex-grow: 1;
 }
 .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  padding: 0 10px;
+  padding: 0;
 }
 .section-header h3 {
   margin: 0;
@@ -962,6 +994,14 @@ function handleShowDetails(item) {
 }
 /* --- FINE STILI MIGLIORATI --- */
 
+.adventure-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 10px 0 10px; /* Aggiunge un po' di spazio */
+  flex-wrap: wrap; /* Assicura che i pulsanti vadano a capo su schermi piccoli */
+}
+
 .invite-btn {
   background-color: #8e44ad;
   color: white;
@@ -971,7 +1011,12 @@ function handleShowDetails(item) {
   cursor: pointer;
   font-family: serif;
   font-weight: bold;
-  margin: 0 10px; /* Aggiunge spazio */
+}
+.start-session {
+  background-color: #27ae60; /* Verde */
+}
+.end-session {
+  background-color: #c0392b; /* Rosso */
 }
 .invite-link-wrapper {
   display: flex;
@@ -1030,6 +1075,49 @@ function handleShowDetails(item) {
   border-radius: 5px;
   cursor: pointer;
 }
+/* --- INIZIO NUOVI STILI PER LA LISTA GIOCATORI --- */
+.players-section {
+  margin-top: 15px;
+}
+.player-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.player-card {
+  display: flex;
+  flex-direction: column;
+  background-color: #e9ecef;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.player-card:hover {
+  background-color: #dee2e6;
+}
+.player-name {
+  font-weight: bold;
+  font-size: 1.1em;
+  color: #333;
+}
+.player-info {
+  font-size: 0.9em;
+  color: #555;
+}
+.player-hp {
+  font-size: 0.9em;
+  font-weight: bold;
+  margin-top: 5px;
+  color: #2c3e50;
+}
+.no-players-message {
+  font-size: 0.9em;
+  font-style: italic;
+  color: #888;
+  text-align: center;
+}
 </style>
 
 <style>
@@ -1078,5 +1166,44 @@ function handleShowDetails(item) {
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 1rem;
+}
+
+.invite-btn {
+  background-color: #8e44ad;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: serif;
+  font-weight: bold;
+  margin: 0 5px;
+}
+.start-session {
+  background-color: #27ae60; /* Verde */
+}
+.end-session {
+  background-color: #c0392b; /* Rosso */
+}
+.invite-link-wrapper {
+  display: flex;
+  gap: 10px;
+  margin-top: 1rem;
+}
+.invite-link-wrapper input {
+  flex-grow: 1;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+.copy-btn {
+  padding: 8px 15px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
 </style>

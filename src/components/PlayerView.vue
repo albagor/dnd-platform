@@ -1,31 +1,38 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { db } from '@/firebaseConfig'
-import { collection, onSnapshot, query } from 'firebase/firestore'
+import { auth, db } from '@/firebaseConfig'
+import { collection, onSnapshot, query, doc, setDoc } from 'firebase/firestore'
 
 const route = useRoute()
 const sharedItems = ref([])
-const adventureId = route.params.adventureId // Prende l'ID dall'URL
+const adventureId = route.params.adventureId
 
 let itemsListener = null
 
 onMounted(() => {
-  if (adventureId) {
-    // Creiamo il percorso alla "lavagna pubblica" di questa specifica avventura
+  if (adventureId && auth.currentUser) {
+    const userId = auth.currentUser.uid
+
+    // NUOVA LOGICA: Il giocatore si "registra" all'avventura
+    const playerDocRef = doc(db, 'adventures', adventureId, 'players', userId)
+    setDoc(playerDocRef, {
+      playerId: userId,
+      playerName: auth.currentUser.email, // Salviamo l'email come nome temporaneo
+    })
+
+    // La logica esistente per ascoltare i contenuti condivisi rimane
     const sharedContentRef = collection(db, 'adventures', adventureId, 'sharedContent')
     const q = query(sharedContentRef)
-
-    // Ci mettiamo in ascolto in tempo reale di questa lavagna
     itemsListener = onSnapshot(q, (snapshot) => {
       sharedItems.value = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
     })
   }
 })
 
-// Puliamo l'ascoltatore quando il giocatore lascia la pagina
 onUnmounted(() => {
   if (itemsListener) itemsListener()
+  // Potremmo aggiungere qui la logica per "abbandonare" la sessione, ma per ora lo lasciamo semplice
 })
 </script>
 

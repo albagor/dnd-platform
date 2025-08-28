@@ -3,16 +3,18 @@ import CharacterSheet from '../components/CharacterSheet.vue'
 import DiceRoller from '../components/DiceRoller.vue'
 import AdventuresSection from '../components/AdventuresSection.vue'
 import AIGenerator from '../components/AIGenerator.vue'
-import PlayerView from '../components/PlayerView.vue' // <-- 1. IMPORTA
+import PlayerView from '../components/PlayerView.vue'
+import Lobby from '../components/Lobby.vue' // <-- 1. IMPORTA
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', name: 'scheda', component: CharacterSheet },
     { path: '/dadi', name: 'dadi', component: DiceRoller },
+    { path: '/lobby', name: 'lobby', component: Lobby }, // <-- 2. AGGIUNGI
     { path: '/avventure', name: 'avventure', component: AdventuresSection },
     { path: '/generatore-ia', name: 'generatore', component: AIGenerator },
-    { path: '/sessione/:adventureId', name: 'sessione', component: PlayerView }, // <-- 2. AGGIUNGI LA ROTTA
+    { path: '/sessione/:adventureId', name: 'sessione', component: PlayerView },
   ],
 })
 

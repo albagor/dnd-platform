@@ -2,10 +2,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { db } from '@/firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc } from 'firebase/firestore' // Aggiunto setDoc
 
 export const useUserStore = defineStore('user', () => {
-  const user = ref(null) // Conterrà i dati dell'utente da Firestore (incluso il ruolo)
+  const user = ref(null)
 
   const isDM = computed(() => user.value?.role === 'DM')
 
@@ -22,12 +22,22 @@ export const useUserStore = defineStore('user', () => {
       user.value = {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
-        ...docSnap.data(), // Aggiunge il ruolo e altri dati salvati
+        ...docSnap.data(),
       }
     } else {
-      // Questo non dovrebbe accadere se la registrazione funziona, ma è una sicurezza
-      console.error('Documento utente non trovato in Firestore!')
-      user.value = { uid: firebaseUser.uid, email: firebaseUser.email, role: 'Player' }
+      // --- INIZIO CORREZIONE ---
+      // Se l'utente è loggato ma non ha un documento, lo creiamo per lui
+      console.warn("Documento utente non trovato, ne creo uno nuovo con ruolo 'Player'.")
+      const newUserDoc = {
+        email: firebaseUser.email,
+        role: 'Player',
+        createdAt: new Date(),
+      }
+      // Salviamo il nuovo documento nel database
+      await setDoc(userDocRef, newUserDoc)
+      // Aggiorniamo lo stato locale con i dati appena creati
+      user.value = { uid: firebaseUser.uid, ...newUserDoc }
+      // --- FINE CORREZIONE ---
     }
   }
 

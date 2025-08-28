@@ -47,7 +47,10 @@ const handleLogout = async () => {
         <nav>
           <RouterLink to="/">Scheda Personaggio</RouterLink>
           <RouterLink to="/dadi">Lancia-Dadi</RouterLink>
+
           <RouterLink v-if="userStore.isDM" to="/avventure">Avventure</RouterLink>
+          <RouterLink v-else to="/lobby">Sessione</RouterLink>
+
           <RouterLink v-if="userStore.isDM" to="/generatore-ia">Generatore IA</RouterLink>
           <a @click="handleLogout" class="logout-btn">Logout</a>
         </nav>
