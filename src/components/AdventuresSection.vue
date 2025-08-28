@@ -17,31 +17,44 @@ const { subscribeToAdventures, createNewAdventure, deleteAdventure, clearStore }
 const toast = useToast()
 
 // --- Logica interna del componente ---
+// --- Logica interna del componente ---
 const activeAdventureId = ref(null)
 const currentAdventure = ref(null)
+const sharedItemIds = ref(new Set())
+let sharedContentListener = null
+
+// --- NUOVO STATO PER LA FINESTRA DI INVITO ---
+const isInviteModalOpen = ref(false)
+const inviteLink = ref('')
 
 onMounted(() => {
   subscribeToAdventures()
 })
 
 onUnmounted(() => {
+  if (sharedContentListener) sharedContentListener()
   clearStore()
 })
 
-// Funzione che carica i dati dell'avventura da Firestore
 async function loadAdventure(adventureId) {
   activeAdventureId.value = adventureId
+  if (sharedContentListener) sharedContentListener()
+
   const docRef = doc(db, 'adventures', adventureId)
   const docSnap = await getDoc(docRef)
+
   if (docSnap.exists()) {
     currentAdventure.value = { id: docSnap.id, ...docSnap.data() }
+    const sharedContentRef = collection(db, 'adventures', adventureId, 'sharedContent')
+    sharedContentListener = onSnapshot(sharedContentRef, (snapshot) => {
+      sharedItemIds.value = new Set(snapshot.docs.map((doc) => doc.id))
+    })
   } else {
     toast.error("Impossibile caricare l'avventura.")
     currentAdventure.value = null
   }
 }
 
-// Watcher che salva automaticamente ogni modifica
 let debounceTimer = null
 watch(
   currentAdventure,
@@ -55,7 +68,6 @@ watch(
           await setDoc(docRef, dataToSave)
           toast.success('Modifiche salvate!', { timeout: 1500 })
         } catch (error) {
-          console.error('Errore nel salvataggio:', error)
           toast.error('Errore durante il salvataggio.')
         }
       }, 2000)
@@ -63,6 +75,41 @@ watch(
   },
   { deep: true },
 )
+
+async function shareItem(item, type, contentField) {
+  if (!activeAdventureId.value) return
+  const itemId = item.id.toString()
+  const sharedDocRef = doc(db, 'adventures', activeAdventureId.value, 'sharedContent', itemId)
+  const dataToShare = { name: item.name || item.title, content: item[contentField], type: type }
+  await setDoc(sharedDocRef, dataToShare)
+  toast.info(`"${dataToShare.name}" è stato condiviso.`)
+}
+
+async function unshareItem(itemId) {
+  if (!activeAdventureId.value) return
+  const sharedDocRef = doc(
+    db,
+    'adventures',
+    activeAdventureId.value,
+    'sharedContent',
+    itemId.toString(),
+  )
+  await deleteDoc(sharedDocRef)
+  toast.info('Elemento non più condiviso.')
+}
+
+// --- NUOVE FUNZIONI PER IL LINK DI INVITO ---
+function openInviteModal() {
+  if (!activeAdventureId.value) return
+  // Costruisce il link completo usando l'URL attuale del browser
+  inviteLink.value = `${window.location.origin}/sessione/${activeAdventureId.value}`
+  isInviteModalOpen.value = true
+}
+
+function copyToClipboard() {
+  navigator.clipboard.writeText(inviteLink.value)
+  toast.success('Link copiato negli appunti!')
+}
 
 // --- Funzioni per modificare i dati locali ---
 const monsterToAddInCombat = ref(null)
@@ -284,14 +331,10 @@ function handleShowDetails(item) {
           <li
             v-for="adventure in adventuresList"
             :key="adventure.id"
+            @click="loadAdventure(adventure.id)"
             :class="{ active: activeAdventureId === adventure.id }"
           >
-            <div class="adventure-item-wrapper" @click="loadAdventure(adventure.id)">
-              {{ adventure.title }}
-            </div>
-            <button @click.stop="deleteAdventure(adventure.id)" class="remove-btn-adventure small">
-              x
-            </button>
+            {{ adventure.title }}
           </li>
         </ul>
         <p v-else>Crea la tua prima avventura usando il tasto +</p>
@@ -498,6 +541,7 @@ function handleShowDetails(item) {
               class="chapter-title-input"
               style="font-size: 1.5em"
             />
+            <button @click="openInviteModal" class="invite-btn">Invita Giocatori</button>
             <button class="add-chapter-btn" @click="addChapter">+ Aggiungi Capitolo</button>
           </div>
           <div class="section-content">
@@ -507,43 +551,6 @@ function handleShowDetails(item) {
               class="text-editor"
               placeholder="Scrivi qui il background dell'avventura..."
             ></textarea>
-          </div>
-        </section>
-        <section
-          v-for="chapter in currentAdventure.chapters"
-          :key="chapter.id"
-          class="adventure-block box"
-        >
-          <div class="section-header" @click="toggleChapter(chapter.id)">
-            <h3>
-              Capitolo:
-              <input type="text" @click.stop v-model="chapter.title" class="chapter-title-input" />
-            </h3>
-            <span class="toggle-icon">{{ expandedChapterId === chapter.id ? '▼' : '▶' }}</span>
-          </div>
-          <div v-if="expandedChapterId === chapter.id" class="section-content">
-            <h4>Contenuto per il DM</h4>
-            <textarea
-              v-model="chapter.content"
-              class="text-editor"
-              placeholder="Scrivi qui il contenuto del capitolo..."
-            ></textarea>
-            <div
-              class="linked-text-preview"
-              v-html="renderLinkedText(chapter.content)"
-              @click="showDetails"
-            ></div>
-            <h4>Testo da condividere con i giocatori</h4>
-            <textarea
-              v-model="chapter.shareContent"
-              class="text-editor share-content-editor"
-              placeholder="Questo è il testo che vuoi mostrare ai tuoi giocatori."
-            ></textarea>
-            <div
-              class="linked-text-preview player-view"
-              v-html="renderLinkedText(chapter.shareContent)"
-              @click="showDetails"
-            ></div>
           </div>
         </section>
       </div>
@@ -602,6 +609,20 @@ function handleShowDetails(item) {
           @toggle-bestiary="isBestiaryOpen = !isBestiaryOpen"
         />
       </section>
+    </div>
+
+    <div v-if="isInviteModalOpen" class="modal-overlay" @click.self="isInviteModalOpen = false">
+      <div class="modal-content">
+        <h3>Invita Giocatori alla Sessione</h3>
+        <p>Condividi questo link con i tuoi giocatori per farli entrare nella sessione corretta.</p>
+        <div class="invite-link-wrapper">
+          <input type="text" :value="inviteLink" readonly />
+          <button @click="copyToClipboard" class="copy-btn">Copia</button>
+        </div>
+        <div class="modal-actions">
+          <button @click="isInviteModalOpen = false" class="btn-secondary">Chiudi</button>
+        </div>
+      </div>
     </div>
 
     <Bestiary
@@ -940,6 +961,75 @@ function handleShowDetails(item) {
   font-size: 0.9em;
 }
 /* --- FINE STILI MIGLIORATI --- */
+
+.invite-btn {
+  background-color: #8e44ad;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: serif;
+  font-weight: bold;
+  margin: 0 10px; /* Aggiunge spazio */
+}
+.invite-link-wrapper {
+  display: flex;
+  gap: 10px;
+  margin-top: 1rem;
+}
+.invite-link-wrapper input {
+  flex-grow: 1;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+.copy-btn {
+  padding: 8px 15px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+/* Stili generici per modali (potrebbero essere già nel tuo file) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  background-color: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 500px;
+  color: #000;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.btn-secondary {
+  background-color: #bdc3c7;
+  color: #2c3e50;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
 </style>
 
 <style>
