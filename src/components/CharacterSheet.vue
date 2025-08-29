@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router' // Importa useRoute
 import { dndClasses, dndRaces, dndHitDice } from '../data/dndData.js'
 import { dndDefensiveItems } from '@/data/dndDefensiveItems.js'
 import { dndRacialTraits } from '@/data/dndRacialTraits.js'
@@ -15,11 +16,11 @@ import CombatSection from './CombatSection.vue'
 import FeaturesAndTraits from './FeaturesAndTraits.vue'
 import InventorySection from './InventorySection.vue'
 import Grimoire from './Grimoire.vue'
-
 import { auth, db } from '@/firebaseConfig'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useToast } from 'vue-toastification'
 
+const route = useRoute() // Permette di leggere l'URL
 const toast = useToast()
 const isInitialLoad = ref(true)
 
@@ -222,6 +223,74 @@ const defaultCharacter = {
 }
 const character = ref(JSON.parse(JSON.stringify(defaultCharacter)))
 
+// --- INIZIO BLOCCO LOGICA MODIFICATO ---
+
+// Funzione helper per caricare i dati
+async function loadCharacterSheet(userId) {
+  if (!userId) return
+  const docRef = doc(db, 'characterSheets', userId)
+  const docSnap = await getDoc(docRef)
+
+  if (docSnap.exists()) {
+    const loadedData = docSnap.data()
+    character.value = { ...defaultCharacter, ...loadedData }
+    toast.success('Scheda personaggio caricata!')
+  } else {
+    character.value = JSON.parse(JSON.stringify(defaultCharacter))
+    toast.info('Nessuna scheda trovata per questo giocatore. Mostrata scheda vuota.')
+  }
+  nextTick(() => {
+    isInitialLoad.value = false
+  })
+}
+
+// Logica che decide QUALE scheda caricare
+onMounted(() => {
+  watch(
+    () => auth.currentUser,
+    (user) => {
+      if (user) {
+        const targetUserId = route.query.charId
+        if (targetUserId) {
+          loadCharacterSheet(targetUserId)
+        } else {
+          loadCharacterSheet(user.uid)
+        }
+      }
+    },
+    { immediate: true },
+  )
+})
+
+// Logica che decide DOVE salvare i dati
+watch(
+  character,
+  async (newData) => {
+    if (isInitialLoad.value) return
+
+    let targetUserId = route.query.charId
+    if (!targetUserId) {
+      if (auth.currentUser) {
+        targetUserId = auth.currentUser.uid
+      } else {
+        return // Non salvare se non c'è un utente loggato
+      }
+    }
+
+    if (targetUserId) {
+      const docRef = doc(db, 'characterSheets', targetUserId)
+      try {
+        await setDoc(docRef, JSON.parse(JSON.stringify(newData)))
+      } catch (error) {
+        console.error('Errore durante il salvataggio:', error)
+        toast.error('Errore nel salvataggio della scheda.')
+      }
+    }
+  },
+  { deep: true },
+)
+
+// --- FINE BLOCCO LOGICA MODIFICATO ---
 // LOGICA FIREBASE
 onMounted(async () => {
   if (auth.currentUser) {

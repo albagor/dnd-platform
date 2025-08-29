@@ -1,4 +1,5 @@
 <script setup>
+import { useRouter } from 'vue-router'
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useAdventureStore } from '@/stores/adventureStore'
 import { useUserStore } from '@/stores/userStore'
@@ -13,6 +14,8 @@ import CombatTracker from './combatTracker.vue'
 import CharacterStatBlock from './CharacterStatBlock.vue'
 
 // --- Setup degli Store ---
+const router = useRouter()
+
 const adventureStore = useAdventureStore()
 const { adventuresList } = storeToRefs(adventureStore)
 const {
@@ -335,14 +338,25 @@ const selectedMonsterForModal = ref(null)
 const isCharacterDetailsModalOpen = ref(false)
 const selectedCharacterForModal = ref(null)
 
+function openPlayerSheet(playerId) {
+  router.push({ path: '/', query: { charId: playerId } })
+}
 function handleShowDetails(item) {
   if (!item) return
-  if (item.is_pc) {
-    selectedCharacterForModal.value = item
-    isCharacterDetailsModalOpen.value = true
-  } else if (item.monsterData || item.type) {
+
+  // Gestisce solo Mostri, PNG o altri oggetti con uno stat block.
+  // La parte per i PC (is_pc) è stata rimossa perché ora la gestisce openPlayerSheet.
+  if (item.monsterData || item.type) {
     selectedMonsterForModal.value = item.monsterData || item
     isMonsterDetailsModalOpen.value = true
+  }
+}
+async function removePlayer(playerId) {
+  if (!activeAdventureId.value || !playerId) return
+  if (confirm('Sei sicuro di voler rimuovere questo giocatore dalla sessione?')) {
+    const playerDocRef = doc(db, 'adventures', activeAdventureId.value, 'players', playerId)
+    await deleteDoc(playerDocRef)
+    toast.info('Giocatore rimosso dalla sessione.')
   }
 }
 </script>
@@ -379,17 +393,20 @@ function handleShowDetails(item) {
               v-for="player in playersInAdventure"
               :key="player.id"
               class="player-card"
-              @click="handleShowDetails({ ...player, is_pc: true })"
+              @click="openPlayerSheet(player.id)"
             >
-              <strong class="player-name">{{ player.header.name }}</strong>
-              <span class="player-info">
-                {{ player.header.race }}
-                {{ player.header.classes[0] ? player.header.classes[0].name : '' }} (Liv.
-                {{ player.header.classes.reduce((acc, cv) => acc + (cv.level || 0), 0) }})
-              </span>
-              <span class="player-hp">
-                PF: {{ player.combat.hp.current }} / {{ player.combat.hp.max }}
-              </span>
+              <div class="player-card-main">
+                <strong class="player-name">{{ player.header.name }}</strong>
+                <span class="player-info">
+                  {{ player.header.race }}
+                  {{ player.header.classes[0] ? player.header.classes[0].name : '' }} (Liv.
+                  {{ player.header.classes.reduce((acc, cv) => acc + (cv.level || 0), 0) }})
+                </span>
+                <span class="player-hp">
+                  PF: {{ player.combat.hp.current }} / {{ player.combat.hp.max }}
+                </span>
+              </div>
+              <button @click.stop="removePlayer(player.id)" class="remove-player-btn">×</button>
             </li>
           </ul>
           <p v-else class="no-players-message">
@@ -1330,6 +1347,41 @@ function handleShowDetails(item) {
 .unshare-btn {
   background-color: #e74c3c; /* Rosso */
   color: white;
+}
+.player-card {
+  display: flex; /* Modificato */
+  justify-content: space-between; /* Modificato */
+  align-items: center; /* Modificato */
+  background-color: #e9ecef;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 8px;
+  transition: background-color 0.2s;
+}
+.player-card-main {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  cursor: pointer;
+}
+.player-card:hover {
+  background-color: #dee2e6;
+}
+.remove-player-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
 
