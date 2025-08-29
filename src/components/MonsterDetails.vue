@@ -2,13 +2,14 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  monster: {
-    type: Object,
-    required: true,
-  },
+  monster: { type: Object, required: true },
 })
+defineEmits(['close'])
 
-const emit = defineEmits(['close'])
+const imageUrl = computed(() => {
+  if (!props.monster) return null
+  return props.monster.image_url || props.monster.imageUrl || null
+})
 
 const abilityModifiers = computed(() => {
   if (!props.monster || !props.monster.ability_scores) return {}
@@ -22,7 +23,6 @@ const abilityModifiers = computed(() => {
 })
 
 const formattedSpeed = computed(() => {
-  // Controlla se 'speed' esiste e non è vuoto prima di usare split
   if (typeof props.monster.speed === 'string' && props.monster.speed) {
     return props.monster.speed
       .split(',')
@@ -39,24 +39,34 @@ const formattedHpDice = computed(() => {
   return ''
 })
 
-// NUOVA FUNZIONE per gestire in modo sicuro i campi che potrebbero non essere array
 const formatOptionalArray = (value) => {
   if (Array.isArray(value)) {
     return value.join(', ')
   }
-  return value || '' // Se è una stringa o undefined, la restituisce così com'è
+  return value || ''
+}
+
+const formatText = (textBlock) => {
+  if (!textBlock || typeof textBlock !== 'string') return ''
+  return textBlock
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+    .map((line) => {
+      return '<p>' + line.replace(/\*\*(.*?)\.\*\*/g, '<strong>$1.</strong>') + '</p>'
+    })
+    .join('')
 }
 </script>
 
 <template>
   <div class="monster-details-overlay" @click.self="$emit('close')">
-    <div class="monster-details-modal">
+    <div v-if="monster" class="monster-details-modal">
       <div class="bestiary-header">
         <h2>{{ monster.name }}</h2>
         <button @click="$emit('close')" class="close-btn">×</button>
       </div>
-
       <div class="monster-details-content">
+        <img v-if="imageUrl" :src="imageUrl" class="monster-image" alt="Immagine creatura" />
         <p class="monster-meta">
           <span class="type-and-size">{{ monster.size }} {{ monster.type }}</span
           >,
@@ -72,7 +82,7 @@ const formatOptionalArray = (value) => {
           <p><strong>Velocità:</strong> {{ formattedSpeed }}</p>
         </div>
         <hr class="separator" />
-        <div class="ability-scores">
+        <div v-if="monster.ability_scores" class="ability-scores">
           <div>
             <strong>FOR</strong><br />{{ monster.ability_scores.str }} ({{ abilityModifiers.str }})
           </div>
@@ -93,11 +103,13 @@ const formatOptionalArray = (value) => {
           </div>
         </div>
         <hr class="separator" />
-
         <div
           class="details-section"
-          v-if="monster.senses || monster.languages || monster.challenge_rating"
+          v-if="monster.skills || monster.senses || monster.languages || monster.challenge_rating"
         >
+          <p v-if="monster.skills">
+            <strong>Abilità:</strong> {{ formatOptionalArray(monster.skills) }}
+          </p>
           <p v-if="monster.senses">
             <strong>Sensi:</strong> {{ formatOptionalArray(monster.senses) }}
           </p>
@@ -108,7 +120,27 @@ const formatOptionalArray = (value) => {
             <strong>Grado Sfida:</strong> {{ monster.challenge_rating }}
           </p>
         </div>
-        <hr class="separator" />
+        <div
+          v-if="monster.description && !monster.traits"
+          class="details-section"
+          v-html="formatText(monster.description)"
+        ></div>
+        <hr class="separator" v-if="monster.traits" />
+        <div
+          v-if="monster.traits"
+          class="details-section"
+          v-html="formatText(monster.traits)"
+        ></div>
+        <hr class="separator" v-if="monster.actions" />
+        <div class="details-section" v-if="monster.actions">
+          <h3>Azioni</h3>
+          <div v-html="formatText(monster.actions)"></div>
+        </div>
+        <hr class="separator" v-if="monster.dm_prompt" />
+        <div v-if="monster.dm_prompt" class="details-section dm-notes">
+          <h3>Spunto per il DM</h3>
+          <p>{{ monster.dm_prompt }}</p>
+        </div>
       </div>
     </div>
   </div>
@@ -224,5 +256,22 @@ const formatOptionalArray = (value) => {
 .action-entry p strong {
   display: block;
   margin-bottom: 3px;
+}
+.monster-image {
+  width: 100%;
+  height: 300px; /* Altezza fissa per un layout prevedibile */
+  object-fit: cover; /* Riempie lo spazio senza deformare l'immagine */
+  border-radius: 6px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  background-color: #eee;
+}
+/* Aggiungi in fondo a <style scoped> di MonsterDetails.vue */
+.dm-notes {
+  background-color: #fff8e1;
+  padding: 10px;
+  border-radius: 5px;
+  border-left: 4px solid #f1c40f;
+  font-style: italic;
 }
 </style>

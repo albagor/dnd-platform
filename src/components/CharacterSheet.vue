@@ -19,6 +19,7 @@ import Grimoire from './Grimoire.vue'
 import { auth, db } from '@/firebaseConfig'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useToast } from 'vue-toastification'
+import { uploadImage } from '@/services/storageService.js' // <-- Aggiungi questo import
 
 const route = useRoute() // Permette di leggere l'URL
 const toast = useToast()
@@ -771,6 +772,26 @@ const spellSaveDC = computed(() =>
 const spellAttackBonus = computed(() =>
   spellcastingAbility.value ? proficiencyBonusByLevel.value + spellcastingAbilityModifier.value : 0,
 )
+// --- NUOVA FUNZIONE PER GESTIRE L'UPLOAD ---
+async function handlePortraitUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  toast.info("Caricamento dell'immagine in corso...")
+
+  try {
+    const path = `character-portraits/${auth.currentUser.uid}`
+    const downloadURL = await uploadImage(file, path)
+
+    // Salva il nuovo URL nell'oggetto character, il che attiverà il salvataggio automatico
+    character.value.header.appearance.imageUrl = downloadURL
+
+    toast.success('Immagine caricata!')
+  } catch (error) {
+    console.error("Errore durante l'upload:", error)
+    toast.error("Errore durante il caricamento dell'immagine.")
+  }
+}
 </script>
 
 <template>
@@ -911,11 +932,13 @@ const spellAttackBonus = computed(() =>
             />
             <div v-else class="image-placeholder">Nessuna Immagine</div>
             <div class="grid-item">
-              <label>URL Immagine Personaggio</label>
+              <label for="portrait-upload" class="upload-btn">Carica Immagine</label>
               <input
-                type="text"
-                v-model="character.header.appearance.imageUrl"
-                placeholder="Incolla qui l'URL dell'immagine"
+                id="portrait-upload"
+                type="file"
+                @change="handlePortraitUpload"
+                accept="image/*"
+                style="display: none"
               />
             </div>
           </div>
@@ -1548,8 +1571,8 @@ const spellAttackBonus = computed(() =>
   color: #000;
   border-radius: 10px;
   padding: 15px;
-  width: 100%; /* MODIFICATO: Permette al contenitore di restringersi */
-  max-width: 900px; /* MODIFICATO: Mantiene la larghezza massima su schermi grandi */
+  width: 100%;
+  max-width: 900px;
   font-family: serif;
   margin: 2rem auto;
 }
@@ -2324,29 +2347,6 @@ textarea {
   margin-top: 4px;
   border-top: 1px dotted #eee;
 }
-
-/* --- INIZIO REGOLE RESPONSIVE AGGIUNTE --- */
-@media (max-width: 992px) {
-  /* Breakpoint più grande per accomodare il layout complesso */
-  .grid-main,
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .anagrafica-grid,
-  .appearance-section,
-  .appearance-grid,
-  .combat-grid,
-  .skills-section-grid {
-    grid-template-columns: 1fr; /* Impila tutto in una sola colonna */
-  }
-  .spell-slots-grid {
-    grid-template-columns: 1fr;
-  }
-}
-/* --- INIZIO STILI PER NUOVA SEZIONE RISORSE --- */
 .class-resources-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -2398,5 +2398,57 @@ textarea {
   padding: 5px 10px;
   font-size: 0.8em;
   cursor: pointer;
+}
+/* --- INIZIO REGOLE RESPONSIVE COMPLETE --- */
+@media (max-width: 768px) {
+  /* Regole generali per impilare le griglie principali */
+  .anagrafica-grid,
+  .appearance-section,
+  .appearance-grid,
+  .combat-grid,
+  .stats-grid,
+  .skills-section-grid,
+  .treasure-grid,
+  .companion-details-grid,
+  .companion-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Corregge il layout dei punteggi di caratteristica su 2 colonne */
+  .scores {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Permette ai pulsanti di andare a capo */
+  .add-item-section {
+    flex-wrap: wrap;
+  }
+
+  /* Impila la sezione principale degli incantesimi */
+  .spell-main-stats {
+    grid-template-columns: 1fr 1fr; /* Mette CD e Bonus Attacco sulla stessa riga */
+    grid-template-areas:
+      'ability ability'
+      'dc attack'
+      'actions actions';
+  }
+  .spell-main-stats .spell-stat-box:nth-child(1) {
+    grid-area: ability;
+  }
+  .spell-main-stats .spell-stat-box:nth-child(2) {
+    grid-area: dc;
+  }
+  .spell-main-stats .spell-stat-box:nth-child(3) {
+    grid-area: attack;
+  }
+  .spell-main-stats .spell-actions {
+    grid-area: actions;
+    margin-top: 1rem;
+  }
+
+  /* Impila i livelli degli incantesimi */
+  .spell-slots-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

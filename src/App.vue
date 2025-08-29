@@ -51,19 +51,15 @@ const handleLogout = async () => {
         <nav>
           <RouterLink to="/">Scheda Personaggio</RouterLink>
           <RouterLink to="/dadi">Lancia-Dadi</RouterLink>
+          <RouterLink to="/diario">Diario</RouterLink>
 
-          <RouterLink v-if="userStore.isDM" to="/avventure">Avventure</RouterLink>
-
-          <template v-else>
-            <RouterLink
-              v-if="sessionStore.joinedAdventureId"
-              :to="`/sessione/${sessionStore.joinedAdventureId}`"
-              >Sessione Attiva</RouterLink
-            >
-            <RouterLink v-else to="/lobby">Unisciti a una Sessione</RouterLink>
+          <template v-if="userStore.isDM">
+            <RouterLink to="/avventure">Avventure</RouterLink>
+            <RouterLink to="/generatore-ia">Generatore IA</RouterLink>
+            <RouterLink to="/compendio">Compendio DM</RouterLink>
           </template>
+          <RouterLink v-else to="/lobby">Sessione</RouterLink>
 
-          <RouterLink v-if="userStore.isDM" to="/generatore-ia">Generatore IA</RouterLink>
           <a @click="handleLogout" class="logout-btn">Logout</a>
         </nav>
       </header>
@@ -146,4 +142,61 @@ main.responsive-layout {
   }
 }
 /* --- FINE REGOLE RESPONSIVE --- */
+</style>
+
+<style>
+/* N.B. SENZA "scoped" */
+/* Stile globale per le anteprime delle immagini caricate */
+.character-image,
+.monster-editor-image,
+.item-image {
+  width: 100%;
+  height: 200px; /* Altezza fissa per coerenza */
+  object-fit: cover; /* Riempie lo spazio senza deformare l'immagine */
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #f0f0f0;
+  display: block; /* Evita spazi extra sotto l'immagine */
+}
+.character-image,
+.monster-editor-image,
+.item-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #f0f0f0;
+  display: block;
+}
+/* Stile globale per le anteprime delle immagini */
+.character-image,
+.monster-editor-image,
+.item-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #f0f0f0;
+  display: block;
+}
+
+/* Stile globale per il pulsante di upload */
+.upload-btn {
+  background-color: #3498db;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+  cursor: pointer;
+  font-family: sans-serif;
+  font-weight: bold;
+  display: inline-block;
+  margin-top: 5px;
+  border: none;
+}
+.upload-btn:hover {
+  background-color: #2980b9;
+}
 </style>

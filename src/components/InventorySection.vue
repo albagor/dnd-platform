@@ -125,17 +125,28 @@ function showDescription(item) {
 
       <div class="inventory-list">
         <div class="inventory-header">
-          <span>Nome</span><span>Qt.</span><span>Peso (kg)</span><span>Stato</span
-          ><span>Azioni</span>
+          <span>Nome</span>
+          <span>Qt.</span>
+          <span>Peso (kg)</span>
+          <span>Stato</span>
+          <span>Azioni</span>
         </div>
         <div v-for="item in character.equipment.inventory" :key="item.id" class="inventory-row">
-          <input type="text" v-model="item.name" class="name-input" />
-          <input type="number" v-model.number="item.quantity" class="quantity-input" />
-          <input type="number" v-model.number="item.weight" class="weight-input" />
-          <button @click="toggleStatus(item)" :class="['status-btn', item.status]">
-            {{ item.status === 'carried' ? 'Trasportato' : 'Depositato' }}
-          </button>
-          <div class="actions-cell">
+          <div class="inventory-cell" data-label="Nome">
+            <input type="text" v-model="item.name" class="name-input" :title="item.description" />
+          </div>
+          <div class="inventory-cell" data-label="Qt.">
+            <input type="number" v-model.number="item.quantity" class="quantity-input" />
+          </div>
+          <div class="inventory-cell" data-label="Peso (kg)">
+            <input type="number" v-model.number="item.weight" class="weight-input" />
+          </div>
+          <div class="inventory-cell" data-label="Stato">
+            <button @click="toggleStatus(item)" :class="['status-btn', item.status]">
+              {{ item.status === 'carried' ? 'Trasportato' : 'Depositato' }}
+            </button>
+          </div>
+          <div class="inventory-cell actions-cell" data-label="Azioni">
             <button @click="showDescription(item)" v-if="item.description" class="view-btn">
               Vedi
             </button>
@@ -155,24 +166,16 @@ function showDescription(item) {
       class="modal-overlay"
       @click.self="isCustomItemModalOpen = false"
     ></div>
-
     <div
       v-if="isDescriptionModalOpen"
       class="modal-overlay"
       @click.self="isDescriptionModalOpen = false"
-    >
-      <div class="modal-content">
-        <h3 class="description-title">{{ selectedItemForDescription.name }}</h3>
-        <p class="description-text">{{ selectedItemForDescription.description }}</p>
-        <div class="modal-actions">
-          <button @click="isDescriptionModalOpen = false" class="btn-secondary">Chiudi</button>
-        </div>
-      </div>
-    </div>
+    ></div>
   </div>
 </template>
 
 <style scoped>
+/* ...TUTTO IL TUO STILE ESISTENTE... */
 .treasure-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -214,7 +217,7 @@ function showDescription(item) {
 .inventory-header,
 .inventory-row {
   display: grid;
-  grid-template-columns: 3fr 0.5fr 1fr 1.2fr 1fr;
+  grid-template-columns: 3fr 0.5fr 0.5fr 1.2fr 1fr;
   gap: 1rem;
   align-items: center;
   padding: 0.5rem 0;
@@ -225,6 +228,9 @@ function showDescription(item) {
   font-size: 0.8em;
   text-transform: uppercase;
   color: #555;
+}
+.inventory-cell::before {
+  content: none;
 }
 .name-input {
   width: 100%;
@@ -266,12 +272,11 @@ function showDescription(item) {
 }
 .manual-btn {
   background-color: #95a5a6;
-} /* Stile aggiunto per il pulsante manuale */
-
-/* --- INIZIO NUOVI STILI --- */
+}
 .actions-cell {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 5px;
 }
 .view-btn {
@@ -289,70 +294,58 @@ function showDescription(item) {
   margin-bottom: 10px;
 }
 .modal-content .description-text {
-  white-space: pre-wrap; /* Mantiene la formattazione e gli a-capo */
+  white-space: pre-wrap;
   background-color: #f8f9fa;
   padding: 10px;
   border-radius: 4px;
   min-height: 100px;
 }
-/* Stili per la modale di inserimento (dal genitore) */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-.modal-content {
-  background-color: white;
-  padding: 25px;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  width: 90%;
-  max-width: 500px;
-  color: #000;
-}
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-.grid-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-.grid-item.full-width {
-  grid-column: 1 / -1;
-}
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-.btn-primary {
-  background-color: #2ecc71;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1em;
-}
-.btn-secondary {
-  background-color: #bdc3c7;
-  color: #2c3e50;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1em;
+
+/* --- REGOLE RESPONSIVE CORRETTE --- */
+@media (max-width: 768px) {
+  .treasure-grid,
+  .add-item-section {
+    grid-template-columns: 1fr;
+    flex-wrap: wrap;
+  }
+  /* RITOCCO AGGIUNTO QUI */
+  .add-item-section select {
+    flex-basis: 100%; /* Forza la tendina ad andare a capo */
+    margin-bottom: 5px; /* Aggiunge un po' di spazio sotto */
+  }
+  .inventory-header {
+    display: none;
+  }
+  .inventory-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+  .inventory-cell {
+    display: flex;
+    flex-direction: column;
+  }
+  .inventory-cell::before {
+    content: attr(data-label);
+    font-weight: bold;
+    font-size: 0.7em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 5px;
+  }
+  .quantity-input,
+  .weight-input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .actions-cell {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
 }
 </style>

@@ -202,7 +202,6 @@ function addCustomWeapon() {
 </template>
 
 <style scoped>
-/* Stili principali... */
 .combat-section {
   display: flex;
   flex-direction: column;
@@ -233,9 +232,8 @@ function addCustomWeapon() {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-} /* Ridotto gap */
+}
 
-/* NUOVI STILI PER LAYOUT COMPATTO */
 .weapon-list-header {
   display: grid;
   grid-template-columns: 3fr 1fr 1.5fr 1.5fr auto;
@@ -252,13 +250,12 @@ function addCustomWeapon() {
 .weapon-list-header > span:nth-child(3) {
   text-align: center;
 }
-
 .weapon-row {
   display: grid;
-  grid-template-columns: 3fr 1fr 1.5fr 1.5fr auto; /* Colonne ricalibrate */
+  grid-template-columns: 3fr 1fr 1.5fr 1.5fr auto;
   gap: 1rem;
   align-items: center;
-  padding: 0.5rem 0.75rem; /* Padding ridotto */
+  padding: 0.5rem 0.75rem;
   background-color: #f9f9f9;
   border-radius: 6px;
   border: 1px solid #eee;
@@ -266,18 +263,16 @@ function addCustomWeapon() {
 .weapon-row:hover {
   background-color: #f1f1f1;
 }
-
 .weapon-details {
   display: flex;
   flex-direction: column;
 }
-
 .weapon-main-line {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap; /* AGGIUNTO: Permette agli elementi di andare a capo */
 }
-
 .weapon-name {
   font-weight: bold;
   font-size: 1.1em;
@@ -311,7 +306,6 @@ function addCustomWeapon() {
   gap: 0.3rem;
   white-space: nowrap;
 }
-
 .weapon-ammo {
   display: flex;
   align-items: center;
@@ -324,7 +318,6 @@ function addCustomWeapon() {
   font-size: 0.9em;
   text-align: center;
 }
-
 .weapon-properties {
   font-size: 0.8em;
   color: #666;
@@ -332,14 +325,12 @@ function addCustomWeapon() {
   margin-top: 2px;
   line-height: 1.2;
 }
-
 .stat-block-compact {
   font-weight: bold;
   font-size: 1.1em;
   text-align: center;
   position: relative;
 }
-
 .damage-type::after {
   content: attr(data-damage-type);
   position: absolute;
@@ -350,7 +341,6 @@ function addCustomWeapon() {
   color: #555;
   font-weight: normal;
 }
-
 .weapon-actions {
   display: flex;
   gap: 0.5rem;
@@ -364,8 +354,7 @@ function addCustomWeapon() {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8em;
-} /* Font ridotto */
-
+}
 .remove-btn.small {
   width: 28px;
   height: 28px;
@@ -384,9 +373,7 @@ function addCustomWeapon() {
   padding: 8px 12px;
   font-size: 0.9em;
 }
-/* ... altri stili ... */
-
-/* Stili per Modale Arma Custom (riutilizzati da HP modal) */
+/* Stili per Modale Arma Custom */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -437,17 +424,6 @@ function addCustomWeapon() {
   border-radius: 4px;
   box-sizing: border-box;
 }
-.properties-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-}
-.properties-group label {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -469,5 +445,49 @@ function addCustomWeapon() {
 .btn-secondary {
   background-color: #bdc3c7;
   color: #2c3e50;
+}
+
+/* --- REGOLE RESPONSIVE PER LA SEZIONE COMBATTIMENTO --- */
+@media (max-width: 768px) {
+  .add-weapon-section {
+    flex-wrap: wrap; /* Permette ai pulsanti di andare a capo */
+  }
+  .add-weapon-section select {
+    flex-basis: 100%; /* Forza la tendina ad andare a capo */
+    margin-bottom: 5px;
+  }
+  .weapon-list-header {
+    display: none; /* Nasconde l'intestazione su desktop */
+  }
+  .weapon-row {
+    grid-template-columns: 1fr auto; /* Colonne per nome e pulsante rimuovi */
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      'details remove'
+      'bonus damage'
+      'actions actions';
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+  /* Assegna ogni elemento alla sua area */
+  .weapon-row > .weapon-details {
+    grid-area: details;
+  }
+  .weapon-row > .stat-block-compact:nth-of-type(1) {
+    grid-area: bonus;
+  }
+  .weapon-row > .stat-block-compact.damage-type {
+    grid-area: damage;
+  }
+  .weapon-row > .weapon-actions {
+    grid-area: actions;
+  }
+  .weapon-row > .remove-btn {
+    grid-area: remove;
+    align-self: flex-start;
+  }
 }
 </style>
