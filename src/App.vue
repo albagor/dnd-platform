@@ -9,6 +9,7 @@ import { useUserStore } from './stores/userStore'
 import { useAdventureStore } from './stores/adventureStore'
 import { useDiceStore } from './stores/diceStore'
 import { useAiGeneratorStore } from './stores/aiGeneratorStore'
+import { useSessionStore } from './stores/sessionStore' // Importa la memoria di sessione
 
 const toast = useToast()
 const isLoggedIn = ref(false)
@@ -16,6 +17,7 @@ const userStore = useUserStore()
 const adventureStore = useAdventureStore()
 const diceStore = useDiceStore()
 const aiGeneratorStore = useAiGeneratorStore()
+const sessionStore = useSessionStore() // Attiva la memoria
 
 onMounted(() => {
   onAuthStateChanged(auth, (user) => {
@@ -23,11 +25,11 @@ onMounted(() => {
     if (user) {
       userStore.fetchUser(user)
     } else {
-      // Quando l'utente fa logout, pulisce TUTTI gli store.
       userStore.clearUser()
       adventureStore.clearStore()
       diceStore.clearStore()
-      aiGeneratorStore.generatedItem = null // Reset specifico per l'IA
+      aiGeneratorStore.generatedItem = null
+      sessionStore.clearSession() // Pulisce la memoria di sessione al logout
     }
   })
 })
@@ -51,7 +53,15 @@ const handleLogout = async () => {
           <RouterLink to="/dadi">Lancia-Dadi</RouterLink>
 
           <RouterLink v-if="userStore.isDM" to="/avventure">Avventure</RouterLink>
-          <RouterLink v-else to="/lobby">Sessione</RouterLink>
+
+          <template v-else>
+            <RouterLink
+              v-if="sessionStore.joinedAdventureId"
+              :to="`/sessione/${sessionStore.joinedAdventureId}`"
+              >Sessione Attiva</RouterLink
+            >
+            <RouterLink v-else to="/lobby">Unisciti a una Sessione</RouterLink>
+          </template>
 
           <RouterLink v-if="userStore.isDM" to="/generatore-ia">Generatore IA</RouterLink>
           <a @click="handleLogout" class="logout-btn">Logout</a>

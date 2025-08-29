@@ -1,10 +1,14 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { auth, db } from '@/firebaseConfig'
+import { db } from '@/firebaseConfig'
 import { collection, onSnapshot, query, doc, setDoc } from 'firebase/firestore'
+import { useSessionStore } from '@/stores/sessionStore' // 1. Importa la memoria
+import { auth } from '@/firebaseConfig'
 
 const route = useRoute()
+const sessionStore = useSessionStore() // 2. Attiva la memoria
+
 const sharedItems = ref([])
 const adventureId = route.params.adventureId
 
@@ -12,16 +16,16 @@ let itemsListener = null
 
 onMounted(() => {
   if (adventureId && auth.currentUser) {
-    const userId = auth.currentUser.uid
+    // 3. Salva l'ID dell'avventura a cui ti sei unito
+    sessionStore.setJoinedAdventure(adventureId)
 
-    // NUOVA LOGICA: Il giocatore si "registra" all'avventura
+    const userId = auth.currentUser.uid
     const playerDocRef = doc(db, 'adventures', adventureId, 'players', userId)
     setDoc(playerDocRef, {
       playerId: userId,
-      playerName: auth.currentUser.email, // Salviamo l'email come nome temporaneo
+      playerName: auth.currentUser.email,
     })
 
-    // La logica esistente per ascoltare i contenuti condivisi rimane
     const sharedContentRef = collection(db, 'adventures', adventureId, 'sharedContent')
     const q = query(sharedContentRef)
     itemsListener = onSnapshot(q, (snapshot) => {
@@ -32,7 +36,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (itemsListener) itemsListener()
-  // Potremmo aggiungere qui la logica per "abbandonare" la sessione, ma per ora lo lasciamo semplice
 })
 </script>
 
