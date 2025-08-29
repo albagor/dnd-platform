@@ -2,6 +2,7 @@
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useAdventureStore } from '@/stores/adventureStore'
 import { useUserStore } from '@/stores/userStore'
+import { useUiStore } from '@/stores/uiStore'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'vue-toastification'
 import { db } from '@/firebaseConfig'
@@ -14,22 +15,35 @@ import CharacterStatBlock from './CharacterStatBlock.vue'
 // --- Setup degli Store ---
 const adventureStore = useAdventureStore()
 const { adventuresList } = storeToRefs(adventureStore)
-const { subscribeToAdventures, createNewAdventure } = adventureStore
+const {
+  subscribeToAdventures,
+  createNewAdventure,
+  deleteAdventure,
+  clearStore,
+  setActiveAdventure,
+  addAccordionItem,
+} = adventureStore
+
 const userStore = useUserStore()
+
+const uiStore = useUiStore()
+const { isBestiaryOpen } = storeToRefs(uiStore)
+
 const toast = useToast()
 
-// --- Stato del componente ---
+// --- Stato Locale Principale ---
 const activeAdventureId = ref(null)
 const currentAdventure = ref(null)
 const sharedItemIds = ref(new Set())
-const playersInAdventure = ref([]) // <-- NUOVO STATO PER I GIOCATORI
-let sharedContentListener = null
-let playersListener = null // <-- NUOVO ASCOLTATORE PER I GIOCATORI
-const isInviteModalOpen = ref(false)
-const inviteLink = ref('')
+const playersInAdventure = ref([])
 const activeSession = ref(null)
+const inviteLink = ref('')
+
+let sharedContentListener = null
+let playersListener = null
 let sessionListener = null
 
+// --- GESTIONE CICLO DI VITA ---
 onMounted(() => {
   subscribeToAdventures()
   const sessionDocRef = doc(db, 'sessions', 'active_session')
@@ -38,17 +52,14 @@ onMounted(() => {
   })
 })
 
-onUnmounted(() => {
-  if (sharedContentListener) sharedContentListener()
-  if (sessionListener) sessionListener()
-  if (playersListener) playersListener() // Pulisce l'ascoltatore dei giocatori
-  adventureStore.clearStore()
-})
-
+// --- LOGICA CORE (CARICAMENTO E SALVATAGGIO) ---
 async function loadAdventure(adventureId) {
+  // Imposta l'ID attivo nello store, così anche gli altri componenti lo sanno
+  adventureStore.setActiveAdventure(adventureId)
+
   activeAdventureId.value = adventureId
   if (sharedContentListener) sharedContentListener()
-  if (playersListener) playersListener() // Pulisce l'ascoltatore precedente
+  if (playersListener) playersListener()
 
   const docRef = doc(db, 'adventures', adventureId)
   const docSnap = await getDoc(docRef)
@@ -56,28 +67,22 @@ async function loadAdventure(adventureId) {
   if (docSnap.exists()) {
     currentAdventure.value = { id: docSnap.id, ...docSnap.data() }
 
-    // Si mette in ascolto dei contenuti condivisi
     const sharedContentRef = collection(db, 'adventures', adventureId, 'sharedContent')
     sharedContentListener = onSnapshot(sharedContentRef, (snapshot) => {
       sharedItemIds.value = new Set(snapshot.docs.map((doc) => doc.id))
     })
 
-    // NUOVO: Si mette in ascolto dei giocatori nella sessione
     const playersRef = collection(db, 'adventures', adventureId, 'players')
     playersListener = onSnapshot(playersRef, async (snapshot) => {
       const playerPromises = snapshot.docs.map(async (playerDoc) => {
-        const playerId = playerDoc.id
-        const characterDocRef = doc(db, 'characterSheets', playerId)
-        const characterSnap = await getDoc(characterDocRef)
-        return characterSnap.exists() ? { id: playerId, ...characterSnap.data() } : null
+        const characterSnap = await getDoc(doc(db, 'characterSheets', playerDoc.id))
+        return characterSnap.exists() ? { id: playerDoc.id, ...characterSnap.data() } : null
       })
-
-      const characters = await Promise.all(playerPromises)
-      playersInAdventure.value = characters.filter((c) => c !== null) // Aggiorna la lista
+      playersInAdventure.value = (await Promise.all(playerPromises)).filter((p) => p)
     })
   } else {
-    toast.error("Impossibile caricare l'avventura.")
     currentAdventure.value = null
+    toast.error("Impossibile caricare l'avventura.")
   }
 }
 
@@ -102,26 +107,25 @@ watch(
   { deep: true },
 )
 
-async function shareItem(item, type, contentField) {
-  if (!activeAdventureId.value) return
-  const itemId = item.id.toString()
-  const sharedDocRef = doc(db, 'adventures', activeAdventureId.value, 'sharedContent', itemId)
-  const dataToShare = { name: item.name || item.title, content: item[contentField], type: type }
-  await setDoc(sharedDocRef, dataToShare)
-  toast.info(`"${dataToShare.name}" è stato condiviso.`)
+// --- GESTIONE SESSIONE E CONDIVISIONE ---
+const isInviteModalOpen = ref(false)
+
+async function startSession() {
+  if (!currentAdventure.value || !userStore.user) return
+  const sessionDocRef = doc(db, 'sessions', 'active_session')
+  await setDoc(sessionDocRef, {
+    adventureId: currentAdventure.value.id,
+    adventureTitle: currentAdventure.value.title,
+    dmId: userStore.user.uid,
+    dmName: userStore.user.email,
+  })
+  toast.success('Sessione avviata!')
 }
 
-async function unshareItem(itemId) {
-  if (!activeAdventureId.value) return
-  const sharedDocRef = doc(
-    db,
-    'adventures',
-    activeAdventureId.value,
-    'sharedContent',
-    itemId.toString(),
-  )
-  await deleteDoc(sharedDocRef)
-  toast.info('Elemento non più condiviso.')
+async function endSession() {
+  const sessionDocRef = doc(db, 'sessions', 'active_session')
+  await deleteDoc(sessionDocRef)
+  toast.info('Sessione terminata.')
 }
 
 function openInviteModal() {
@@ -135,28 +139,25 @@ function copyToClipboard() {
   toast.success('Link copiato negli appunti!')
 }
 
-// --- NUOVE FUNZIONI PER LA LOBBY ---
-async function startSession() {
-  if (!currentAdventure.value || !userStore.user) return
-  const sessionDocRef = doc(db, 'sessions', 'active_session')
-  const sessionData = {
-    adventureId: currentAdventure.value.id,
-    adventureTitle: currentAdventure.value.title,
-    dmId: userStore.user.uid,
-    dmName: userStore.user.email, // o un futuro campo "displayName"
-  }
-  await setDoc(sessionDocRef, sessionData)
-  toast.success('Sessione avviata!')
+async function shareItem(item, type, contentField) {
+  if (!activeAdventureId.value) return
+  const itemId = item.id.toString()
+  const docRef = doc(db, 'adventures', activeAdventureId.value, 'sharedContent', itemId)
+  const dataToShare = { name: item.name || item.title, content: item[contentField], type: type }
+  await setDoc(docRef, dataToShare)
+  toast.info(`"${dataToShare.name}" è stato condiviso.`)
 }
 
-async function endSession() {
-  const sessionDocRef = doc(db, 'sessions', 'active_session')
-  await deleteDoc(sessionDocRef)
-  toast.info('Sessione terminata.')
+async function unshareItem(itemId) {
+  if (!activeAdventureId.value) return
+  const docRef = doc(db, 'adventures', activeAdventureId.value, 'sharedContent', itemId.toString())
+  await deleteDoc(docRef)
+  toast.info('Elemento non più condiviso.')
 }
 
-// --- Funzioni per modificare i dati locali ---
+// --- FUNZIONI UI E VARIE ---
 const monsterToAddInCombat = ref(null)
+
 function addItemToSection(sectionId) {
   if (!currentAdventure.value) return
   let newItem
@@ -195,10 +196,12 @@ function addItemToSection(sectionId) {
   }
   currentAdventure.value[sectionId].push(newItem)
 }
+
 function addMonsterToCombat(monster) {
   monsterToAddInCombat.value = monster
   toast.success(`${monster.name} aggiunto al combattimento!`)
 }
+
 function removeItemFromSection(sectionId, itemToRemove) {
   if (!currentAdventure.value || !currentAdventure.value[sectionId]) return
   const index = currentAdventure.value[sectionId].findIndex((item) => item.id === itemToRemove.id)
@@ -206,6 +209,7 @@ function removeItemFromSection(sectionId, itemToRemove) {
     currentAdventure.value[sectionId].splice(index, 1)
   }
 }
+
 function addChapter() {
   if (!currentAdventure.value) return
   const newChapter = {
@@ -219,12 +223,10 @@ function addChapter() {
   }
   currentAdventure.value.chapters.push(newChapter)
 }
-// --- Il resto del tuo script non cambia ---
+
 const isDmNotesOpen = ref(true)
 const isCombatTrackerOpen = ref(true)
-const isBestiaryOpen = ref(false)
 const isStatBlockModalOpen = ref(false)
-const selectedCombatantForModal = ref(null)
 const expandedChapterId = ref(null)
 const isDetailsModalOpen = ref(false)
 const selectedItemForModal = ref(null)
@@ -264,10 +266,7 @@ function importItemFromCode() {
   try {
     const cleanedCode = codeToImport.value.trim().replace(/,\s*$/, '')
     const item = JSON.parse(cleanedCode)
-    if (!currentAdventure.value[importSectionId.value]) {
-      currentAdventure.value[importSectionId.value] = []
-    }
-    currentAdventure.value[importSectionId.value].push({ ...item, id: Date.now().toString() })
+    addAccordionItem(importSectionId.value, item) // Usa la funzione dello store
     toast.success(`"${item.name || 'Oggetto'}" importato con successo!`)
     isCodeImportModalOpen.value = false
     codeToImport.value = ''
@@ -307,12 +306,7 @@ function toggleAccordionPanel(panelId) {
 function toggleItem(itemId) {
   expandedItems.value[itemId] = !expandedItems.value[itemId]
 }
-function openStatBlockModal(combatant) {
-  if (combatant.type) {
-    selectedCombatantForModal.value = combatant
-    isStatBlockModalOpen.value = true
-  }
-}
+
 function getAbilityModifier(score) {
   const mod = Math.floor(((Number(score) || 10) - 10) / 2)
   return mod >= 0 ? `+${mod}` : mod
@@ -335,10 +329,12 @@ function rollDmDice(sides) {
 function toggleChapter(chapterId) {
   expandedChapterId.value = expandedChapterId.value === chapterId ? null : chapterId
 }
+
 const isMonsterDetailsModalOpen = ref(false)
 const selectedMonsterForModal = ref(null)
 const isCharacterDetailsModalOpen = ref(false)
 const selectedCharacterForModal = ref(null)
+
 function handleShowDetails(item) {
   if (!item) return
   if (item.is_pc) {
@@ -389,7 +385,7 @@ function handleShowDetails(item) {
               <span class="player-info">
                 {{ player.header.race }}
                 {{ player.header.classes[0] ? player.header.classes[0].name : '' }} (Liv.
-                {{ player.header.classes.reduce((acc, cv) => acc + cv.level, 0) }})
+                {{ player.header.classes.reduce((acc, cv) => acc + (cv.level || 0), 0) }})
               </span>
               <span class="player-hp">
                 PF: {{ player.combat.hp.current }} / {{ player.combat.hp.max }}
@@ -432,7 +428,157 @@ function handleShowDetails(item) {
                   </button>
                   <span class="toggle-icon">{{ expandedItems[item.id] ? '▼' : '▶' }}</span>
                 </div>
-                <div v-if="expandedItems[item.id]" class="stat-block-editor"></div>
+
+                <div v-if="expandedItems[item.id]" class="stat-block-editor">
+                  <div class="grid-item full-width">
+                    <label>URL Immagine</label>
+                    <input
+                      type="text"
+                      v-model="item.image_url"
+                      placeholder="http://esempio.com/immagine.png"
+                    />
+                    <img
+                      v-if="item.image_url"
+                      :src="item.image_url"
+                      class="monster-editor-image"
+                      alt="Anteprima"
+                    />
+                    <div class="share-controls">
+                      <button
+                        v-if="item.image_url && !sharedItemIds.has(item.id + '_img')"
+                        @click="
+                          shareItem(
+                            { id: item.id + '_img', name: item.name, content: item.image_url },
+                            'immagine',
+                            'content',
+                          )
+                        "
+                        class="share-btn"
+                      >
+                        Condividi Immagine
+                      </button>
+                      <button
+                        v-else-if="item.image_url"
+                        @click="unshareItem(item.id + '_img')"
+                        class="unshare-btn"
+                      >
+                        Nascondi Immagine
+                      </button>
+                    </div>
+                  </div>
+                  <div class="grid-item full-width">
+                    <label>Descrizione (Lore, Aspetto)</label>
+                    <textarea
+                      rows="4"
+                      v-model="item.description"
+                      placeholder="Descrizione..."
+                    ></textarea>
+                    <div class="share-controls">
+                      <button
+                        v-if="!sharedItemIds.has(item.id + '_desc')"
+                        @click="
+                          shareItem(
+                            { id: item.id + '_desc', name: item.name, content: item.description },
+                            'descrizione',
+                            'content',
+                          )
+                        "
+                        class="share-btn"
+                      >
+                        Condividi Descrizione
+                      </button>
+                      <button v-else @click="unshareItem(item.id + '_desc')" class="unshare-btn">
+                        Nascondi Descrizione
+                      </button>
+                    </div>
+                  </div>
+                  <div v-if="section.id === 'png'" class="grid-item full-width">
+                    <label>Spunto per il DM</label>
+                    <textarea
+                      rows="3"
+                      v-model="item.dm_prompt"
+                      placeholder="Segreti, missioni, agganci di trama..."
+                    ></textarea>
+                  </div>
+                  <div class="monster-details-grid">
+                    <div class="grid-item">
+                      <label>Dimensioni</label><input type="text" v-model="item.size" />
+                    </div>
+                    <div class="grid-item">
+                      <label>Tipo</label><input type="text" v-model="item.type" />
+                    </div>
+                    <div class="grid-item">
+                      <label>Allineamento</label><input type="text" v-model="item.alignment" />
+                    </div>
+                    <div class="grid-item">
+                      <label>Classe Armatura</label><input type="number" v-model.number="item.ac" />
+                    </div>
+                    <div class="grid-item">
+                      <label>Punti Ferita</label><input type="number" v-model.number="item.hp" />
+                    </div>
+                    <div class="grid-item">
+                      <label>Dadi Vita</label><input type="text" v-model="item.hp_dice" />
+                    </div>
+                    <div class="grid-item">
+                      <label>Grado di Sfida</label
+                      ><input type="text" v-model="item.challenge_rating" />
+                    </div>
+                    <div class="grid-item full-width">
+                      <label>Velocità</label><input type="text" v-model="item.speed" />
+                    </div>
+                  </div>
+                  <div class="stat-block-abilities-editor">
+                    <div
+                      v-for="(score, key) in item.ability_scores"
+                      :key="key"
+                      class="ability-editor"
+                    >
+                      <label>{{ key.toUpperCase() }}</label>
+                      <input type="number" v-model.number="item.ability_scores[key]" />
+                      <span>{{ getAbilityModifier(item.ability_scores[key]) }}</span>
+                    </div>
+                  </div>
+                  <div class="grid-item full-width">
+                    <label>Abilità</label
+                    ><textarea
+                      rows="2"
+                      v-model="item.skills"
+                      placeholder="Furtività +6, Percezione +4..."
+                    ></textarea>
+                  </div>
+                  <div class="grid-item full-width">
+                    <label>Sensi</label
+                    ><textarea
+                      rows="2"
+                      v-model="item.senses"
+                      placeholder="scurovisione 18 m, Percezione passiva 14..."
+                    ></textarea>
+                  </div>
+                  <div class="grid-item full-width">
+                    <label>Linguaggi</label
+                    ><textarea
+                      rows="2"
+                      v-model="item.languages"
+                      placeholder="Comune, Elfico..."
+                    ></textarea>
+                  </div>
+                  <div class="grid-item full-width">
+                    <label>Tratti</label
+                    ><textarea
+                      rows="4"
+                      v-model="item.traits"
+                      placeholder="Scrivi qui i tratti speciali..."
+                    ></textarea>
+                  </div>
+                  <div class="grid-item full-width">
+                    <label>Azioni</label
+                    ><textarea
+                      rows="4"
+                      v-model="item.actions"
+                      placeholder="Scrivi qui le azioni..."
+                    ></textarea>
+                  </div>
+                </div>
               </div>
               <button @click="addItemToSection(section.id)" class="add-btn small mt-10">
                 + Aggiungi {{ section.id === 'mostri' ? 'Mostro' : 'PNG' }}
@@ -480,15 +626,21 @@ function handleShowDetails(item) {
                   <input type="text" v-model="item.imageUrl" class="url-input" />
                   <div class="share-controls">
                     <button
-                      v-if="item.imageUrl && !sharedItemIds.has(item.id)"
-                      @click="shareItem(item, 'immagine', 'imageUrl')"
+                      v-if="item.imageUrl && !sharedItemIds.has(item.id + '_img')"
+                      @click="
+                        shareItem(
+                          { id: item.id + '_img', name: item.name, content: item.imageUrl },
+                          'immagine',
+                          'content',
+                        )
+                      "
                       class="share-btn"
                     >
                       Condividi Img
                     </button>
                     <button
-                      v-if="item.imageUrl && sharedItemIds.has(item.id)"
-                      @click="unshareItem(item.id)"
+                      v-if="item.imageUrl && sharedItemIds.has(item.id + '_img')"
+                      @click="unshareItem(item.id + '_img')"
                       class="unshare-btn"
                     >
                       Nascondi Img
@@ -631,8 +783,9 @@ function handleShowDetails(item) {
             <h4>Cronologia</h4>
             <ul>
               <li v-for="roll in dmDiceHistory" :key="roll.id">
-                {{ roll.description }}: {{ roll.diceResult }} + {{ roll.modifier }} =
-                <strong>{{ roll.result }}</strong>
+                {{ roll.description }}: {{ roll.diceResult }} + {{ roll.modifier }} =<strong>{{
+                  roll.result
+                }}</strong>
               </li>
             </ul>
           </div>
@@ -648,7 +801,6 @@ function handleShowDetails(item) {
         />
       </section>
     </div>
-
     <div v-if="isInviteModalOpen" class="modal-overlay" @click.self="isInviteModalOpen = false">
       <div class="modal-content">
         <h3>Invita Giocatori alla Sessione</h3>
@@ -1118,6 +1270,67 @@ function handleShowDetails(item) {
   color: #888;
   text-align: center;
 }
+.invite-btn {
+  background-color: #8e44ad;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: serif;
+  font-weight: bold;
+  margin: 0 5px;
+}
+.start-session {
+  background-color: #27ae60; /* Verde */
+}
+.end-session {
+  background-color: #c0392b; /* Rosso */
+}
+.invite-link-wrapper {
+  display: flex;
+  gap: 10px;
+  margin-top: 1rem;
+}
+.invite-link-wrapper input {
+  flex-grow: 1;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+.copy-btn {
+  padding: 8px 15px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+/* --- STILI AGGIUNTI PER I PULSANTI DI CONDIVISIONE --- */
+.share-controls {
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+}
+.share-btn,
+.unshare-btn {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+.share-btn {
+  background-color: #27ae60; /* Verde */
+  color: white;
+}
+.unshare-btn {
+  background-color: #e74c3c; /* Rosso */
+  color: white;
+}
 </style>
 
 <style>
@@ -1166,44 +1379,5 @@ function handleShowDetails(item) {
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 1rem;
-}
-
-.invite-btn {
-  background-color: #8e44ad;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-family: serif;
-  font-weight: bold;
-  margin: 0 5px;
-}
-.start-session {
-  background-color: #27ae60; /* Verde */
-}
-.end-session {
-  background-color: #c0392b; /* Rosso */
-}
-.invite-link-wrapper {
-  display: flex;
-  gap: 10px;
-  margin-top: 1rem;
-}
-.invite-link-wrapper input {
-  flex-grow: 1;
-  background-color: #eee;
-  border: 1px solid #ccc;
-  padding: 8px;
-  border-radius: 4px;
-  font-family: monospace;
-}
-.copy-btn {
-  padding: 8px 15px;
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
 }
 </style>

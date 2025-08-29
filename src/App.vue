@@ -5,27 +5,29 @@ import { auth } from '@/firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { useToast } from 'vue-toastification'
 import Auth from './components/Auth.vue'
-import { useUserStore } from './stores/userStore' // 1. Importa lo userStore
+import { useUserStore } from './stores/userStore'
 import { useAdventureStore } from './stores/adventureStore'
 import { useDiceStore } from './stores/diceStore'
+import { useAiGeneratorStore } from './stores/aiGeneratorStore'
 
 const toast = useToast()
 const isLoggedIn = ref(false)
-const userStore = useUserStore() // 2. Inizializza lo store
+const userStore = useUserStore()
 const adventureStore = useAdventureStore()
 const diceStore = useDiceStore()
+const aiGeneratorStore = useAiGeneratorStore()
 
 onMounted(() => {
   onAuthStateChanged(auth, (user) => {
     isLoggedIn.value = !!user
     if (user) {
-      // Se l'utente è loggato, carica i suoi dati e il suo ruolo
       userStore.fetchUser(user)
     } else {
-      // Se l'utente fa logout, pulisce tutti gli store
+      // Quando l'utente fa logout, pulisce TUTTI gli store.
       userStore.clearUser()
       adventureStore.clearStore()
       diceStore.clearStore()
+      aiGeneratorStore.generatedItem = null // Reset specifico per l'IA
     }
   })
 })

@@ -16,10 +16,6 @@ function rollDice(sides) {
 onMounted(() => {
   diceStore.subscribeToHistory()
 })
-
-onUnmounted(() => {
-  diceStore.clearStore()
-})
 </script>
 
 <template>
