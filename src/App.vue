@@ -185,16 +185,20 @@ main.responsive-layout {
 }
 
 /* Stile globale per le anteprime delle immagini caricate */
+/* Stile globale DEFINITIVO per tutte le anteprime delle immagini */
 .character-image,
 .monster-editor-image,
-.item-image {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
+.item-image,
+.monster-image {
+  width: 100%; /* Occupa tutta la larghezza del suo contenitore */
+  height: 250px; /* Altezza fissa per un layout uniforme */
+  object-fit: cover; /* Riempie lo spazio senza deformare, tagliando l'eccesso */
+  object-position: center; /* Assicura che l'immagine sia centrata prima di tagliarla */
   border-radius: 4px;
   border: 1px solid #ddd;
   background-color: #f0f0f0;
-  display: block;
+  display: block; /* Evita spazi extra sotto l'immagine */
+  margin-bottom: 10px; /* Aggiunge un po' di spazio sotto */
 }
 
 /* Stile globale per i link dinamici nel testo */

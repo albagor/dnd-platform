@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue' // Aggiunto onUnmounted
-import { useRoute } from 'vue-router' // Importa useRoute
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { dndClasses, dndRaces, dndHitDice } from '../data/dndData.js'
 import { dndDefensiveItems } from '@/data/dndDefensiveItems.js'
 import { dndRacialTraits } from '@/data/dndRacialTraits.js'
@@ -23,12 +23,12 @@ import { uploadImage } from '@/services/storageService.js' // <-- Aggiungi quest
 import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage'
 
 const firebaseStorage = getStorage()
+const abilityOrder = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma']
 
 const route = useRoute() // Permette di leggere l'URL
 const toast = useToast()
 const isInitialLoad = ref(true)
-let characterListener = null; // Variabile per l'ascoltatore in tempo reale
-
+let characterListener = null // Variabile per l'ascoltatore in tempo reale
 
 // STATO DEL COMPONENTE
 const isAnagraficaOpen = ref(true)
@@ -831,58 +831,66 @@ async function removeImage(fieldName) {
     character.value.header.appearance[fieldName] = '' // Rimuovi l'URL
   }
 }
-/ Funzione per caricare E ASCOLTARE la scheda
+// Funzione per caricare E ASCOLTARE la scheda
 function setupCharacterListener(userId) {
-  if (characterListener) characterListener(); // Interrompe l'ascolto precedente
+  if (characterListener) characterListener() // Interrompe l'ascolto precedente
 
-  const docRef = doc(db, 'characterSheets', userId);
-  characterListener = onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      character.value = { id: docSnap.id, ...docSnap.data() };
-    } else {
-      // Se non esiste, mostra una scheda vuota
-      character.value = JSON.parse(JSON.stringify(defaultCharacter));
-    }
-  }, (error) => {
-    console.error("Errore nell'ascolto della scheda:", error);
-    toast.error("Errore di sincronizzazione della scheda.");
-  });
+  const docRef = doc(db, 'characterSheets', userId)
+  characterListener = onSnapshot(
+    docRef,
+    (docSnap) => {
+      if (docSnap.exists()) {
+        character.value = { id: docSnap.id, ...docSnap.data() }
+      } else {
+        // Se non esiste, mostra una scheda vuota
+        character.value = JSON.parse(JSON.stringify(defaultCharacter))
+      }
+    },
+    (error) => {
+      console.error("Errore nell'ascolto della scheda:", error)
+      toast.error('Errore di sincronizzazione della scheda.')
+    },
+  )
 }
 
 onMounted(() => {
-  const targetUserId = route.query.charId || auth.currentUser?.uid;
+  const targetUserId = route.query.charId || auth.currentUser?.uid
   if (targetUserId) {
-    setupCharacterListener(targetUserId);
+    setupCharacterListener(targetUserId)
   }
-});
+})
 
 // Gestisce il cambio di scheda (es. da un PG a un altro)
 onBeforeRouteUpdate((to, from) => {
-  const newTargetId = to.query.charId || auth.currentUser?.uid;
+  const newTargetId = to.query.charId || auth.currentUser?.uid
   if (newTargetId && newTargetId !== (from.query.charId || auth.currentUser?.uid)) {
-    setupCharacterListener(newTargetId);
+    setupCharacterListener(newTargetId)
   }
-});
+})
 
 onUnmounted(() => {
-  if (characterListener) characterListener(); // Interrompe l'ascolto quando si lascia la pagina
-});
+  if (characterListener) characterListener() // Interrompe l'ascolto quando si lascia la pagina
+})
 
 // Watcher per il salvataggio (ora più semplice)
-let debounceTimer = null;
-watch(character, (newData) => {
-  if (!newData || !newData.id) return;
+let debounceTimer = null
+watch(
+  character,
+  (newData) => {
+    if (!newData || !newData.id) return
 
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(async () => {
-    const docRef = doc(db, 'characterSheets', newData.id);
-    try {
-      await setDoc(docRef, JSON.parse(JSON.stringify(newData)));
-    } catch (error) {
-      toast.error('Errore nel salvataggio della scheda.');
-    }
-  }, 1500);
-}, { deep: true });
+    clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(async () => {
+      const docRef = doc(db, 'characterSheets', newData.id)
+      try {
+        await setDoc(docRef, JSON.parse(JSON.stringify(newData)))
+      } catch (error) {
+        toast.error('Errore nel salvataggio della scheda.')
+      }
+    }, 1500)
+  },
+  { deep: true },
+)
 </script>
 
 <template>
@@ -1077,9 +1085,13 @@ watch(character, (newData) => {
       </div>
       <div v-if="isStatsOpen" class="section-content stats-grid">
         <div class="scores">
-          <div v-for="(stat, key) in character.abilityScores" :key="key" class="stat-box">
+          <div v-for="key in abilityOrder" :key="key" class="stat-box">
             <label>{{ translations[key] }}</label>
-            <input type="number" class="score-input" v-model.number="stat.score" />
+            <input
+              type="number"
+              class="score-input"
+              v-model.number="character.abilityScores[key].score"
+            />
             <button
               class="modifier roll-button"
               @click="makeCheck(`Prova ${translations[key]}`, abilityModifiers[key])"

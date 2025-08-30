@@ -17,6 +17,7 @@ import ItemDetails from './ItemDetails.vue'
 import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage' // <-- AGGIUNGI QUESTO IMPORTO
 
 const firebaseStorage = getStorage() // <-- AGGIUNGI QUESTA INIZIALIZZAZIONE
+const abilityOrder = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 
 // --- SETUP DEGLI STORE E ROUTER ---
 const router = useRouter()
@@ -622,7 +623,7 @@ function setImageFromUrl(item, fieldName, event) {
                       <label>Allineamento</label><input type="text" v-model="item.alignment" />
                     </div>
                     <div class="grid-item">
-                      <label>Classe Armatura</label><input type="number" v-model.number="item.ac" />
+                      <label>Classe Armatura</label><input type="text" v-model="item.ac" />
                     </div>
                     <div class="grid-item">
                       <label>Punti Ferita</label><input type="number" v-model.number="item.hp" />
@@ -638,19 +639,15 @@ function setImageFromUrl(item, fieldName, event) {
                       <label>Velocità</label><input type="text" v-model="item.speed" />
                     </div>
                   </div>
-                  <div class="stat-block-abilities-editor">
-                    <div
-                      v-for="(score, key) in item.ability_scores"
-                      :key="key"
-                      class="ability-editor"
-                    >
-                      <label>{{ key.toUpperCase() }}</label>
-                      <input type="number" v-model.number="item.ability_scores[key]" />
-                      <span>{{ getAbilityModifier(item.ability_scores[key]) }}</span>
-                    </div>
-                  </div>
+<div class="stat-block-abilities-editor">
+          <div v-for="key in abilityOrder" :key="key" class="ability-editor">
+           <label>{{ key.toUpperCase() }}</label>
+           <input type="number" v-model.number="item.ability_scores[key]" />
+           <span>{{ getAbilityModifier(item.ability_scores[key]) }}</span>
+          </div>
+         </div>
                   <div class="grid-item full-width">
-                    <label>Abilità</label
+                    <label>Abilità, Tiri salvezza, Immunità e resistenze</label
                     ><textarea
                       rows="2"
                       v-model="item.skills"
@@ -826,6 +823,13 @@ function setImageFromUrl(item, fieldName, event) {
           </div>
           <div class="section-content">
             <h4>Background</h4>
+            <h5>
+              Suggerimenti per la formattazione: &lt;br&gt;Va a capo&lt;/br&gt;
+              ,&lt;p&gt;Paragrafo&lt;/p&gt;, &lt;i&gt;<i>Corsivo</i>&lt;/i&gt;,
+              &lt;u&gt;<u>Sottolineato</u>&lt;/u&gt;, <br>&lt;li&gt;
+              <li>Elenco puntato</li>
+              &lt;/li&gt;</br>
+            </h5>
             <textarea
               v-model="currentAdventure.background"
               class="text-editor"
@@ -1171,24 +1175,29 @@ function setImageFromUrl(item, fieldName, event) {
 }
 .stat-block-abilities-editor {
   display: flex;
-  justify-content: space-between;
-  gap: 5px;
-  background: #f4f4f4;
-  padding: 5px;
-  border-radius: 4px;
+  flex-wrap: wrap; /* Questa è la proprietà chiave per andare a capo */
+  gap: 10px; /* Spazio tra gli elementi */
+  margin-top: 15px;
+  justify-content: space-around; /* Distribuisce uniformemente gli elementi */
 }
 .ability-editor {
   text-align: center;
-  width: 15%;
+  flex: 1 1 calc(16.66% - 10px); /* Base: 6 elementi per riga, meno il gap */
+  max-width: calc(16.66% - 10px); /* Assicura che non superino la dimensione ideale */
+  min-width: 60px; /* Larghezza minima per le caselle (puoi aggiustarla) */
+  box-sizing: border-box; /* Include padding e border nella larghezza */
 }
 .ability-editor label {
   font-size: 0.8em;
   font-weight: bold;
 }
-.ability-editor input {
+/* Stile per gli input numerici dentro le caselle (opzionale, ma migliora) */
+.ability-editor input[type="number"] {
   width: 100%;
+  padding: 5px;
   text-align: center;
-  padding: 2px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 .ability-editor span {
   font-size: 0.9em;
