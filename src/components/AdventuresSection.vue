@@ -99,12 +99,7 @@ function handleShowDetails(item) {
 }
 
 // ...il resto del tuo script (incollo tutto per sicurezza)...
-onUnmounted(() => {
-  if (sharedContentListener) sharedContentListener()
-  if (playersListener) playersListener()
-  if (sessionListener) sessionListener()
-  clearStore()
-})
+
 async function loadAdventure(adventureId) {
   setActiveAdventure(adventureId)
   activeAdventureId.value = adventureId
