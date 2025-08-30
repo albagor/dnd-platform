@@ -79,27 +79,7 @@ onMounted(() => {
   })
 })
 
-// --- FUNZIONE `handleShowDetails` CORRETTA E DEFINITIVA ---
-function handleShowDetails(item) {
-  if (!item) return
-  // Un 'combatant' ha una proprietà 'monsterData' o 'is_pc'. Un 'item' no.
-  const dataToShow = item.monsterData || item
-
-  if (dataToShow.is_pc) {
-    openPlayerSheet(dataToShow.id)
-  } else if (dataToShow.ability_scores) {
-    // Riconosce Mostri e PNG
-    selectedMonsterForModal.value = dataToShow
-    isMonsterDetailsModalOpen.value = true
-  } else {
-    // Tutti gli altri (Ambienti, Tesori, etc.)
-    selectedItemForModal.value = dataToShow
-    isItemDetailsModalOpen.value = true
-  }
-}
-
-// ...il resto del tuo script (incollo tutto per sicurezza)...
-
+// --- LOGICA CORE (CARICAMENTO E SALVATAGGIO) ---
 async function loadAdventure(adventureId) {
   setActiveAdventure(adventureId)
   activeAdventureId.value = adventureId
@@ -150,24 +130,16 @@ watch(
   },
   { deep: true },
 )
-async function confirmDeleteAdventure(adventure) {
-  if (confirm(`Sei sicuro di voler eliminare l'avventura "${adventure.title}"?`)) {
-    await deleteAdventure(adventure.id)
-    if (activeAdventureId.value === adventure.id) {
-      currentAdventure.value = null
-      setActiveAdventure(null)
-    }
-    toast.success('Avventura eliminata.')
-  }
-}
+
+// --- FUNZIONI PER LINK DINAMICI ---
 const allPreparedItems = computed(() => {
   if (!currentAdventure.value) return []
   const items = []
-  const sectionsToScan = ['ambienti', 'png', 'mostri', 'tesori', 'mappe', 'immagini']
-  for (const sectionId of sectionsToScan) {
+  for (const section of accordionSections.value) {
+    const sectionId = section.id
     if (currentAdventure.value[sectionId] && Array.isArray(currentAdventure.value[sectionId])) {
       currentAdventure.value[sectionId].forEach((item) => {
-        const name = item.name
+        const name = item.title || item.name
         if (name) {
           items.push({ name: name.toLowerCase(), item: item })
         }
@@ -197,41 +169,150 @@ function showDetails(event) {
     }
   }
 }
+function handleShowDetails(item) {
+  if (!item) return
+  const dataToShow = item.monsterData || item
+  if (dataToShow.is_pc) {
+    openPlayerSheet(dataToShow.id)
+  } else if (dataToShow.ability_scores) {
+    selectedMonsterForModal.value = dataToShow
+    isMonsterDetailsModalOpen.value = true
+  } else {
+    selectedItemForModal.value = dataToShow
+    isItemDetailsModalOpen.value = true
+  }
+}
+
+// --- TUTTE LE ALTRE FUNZIONI RIPRISTINATE ---
+async function confirmDeleteAdventure(adventure) {
+  if (confirm(`Sei sicuro di voler eliminare l'avventura "${adventure.title}"?`)) {
+    await deleteAdventure(adventure.id)
+    if (activeAdventureId.value === adventure.id) {
+      currentAdventure.value = null
+      setActiveAdventure(null)
+    }
+    toast.success('Avventura eliminata.')
+  }
+}
 async function startSession() {
-  /* ... */
+  if (!currentAdventure.value || !userStore.user) return
+  const sessionDocRef = doc(db, 'sessions', 'active_session')
+  await setDoc(sessionDocRef, {
+    adventureId: currentAdventure.value.id,
+    adventureTitle: currentAdventure.value.title,
+    dmId: userStore.user.uid,
+    dmName: userStore.user.email,
+  })
+  toast.success('Sessione avviata!')
 }
 async function endSession() {
-  /* ... */
+  const sessionDocRef = doc(db, 'sessions', 'active_session')
+  await deleteDoc(sessionDocRef)
+  toast.info('Sessione terminata.')
 }
 function openInviteModal() {
-  /* ... */
+  if (!activeAdventureId.value) return
+  inviteLink.value = `${window.location.origin}/sessione/${activeAdventureId.value}`
+  isInviteModalOpen.value = true
 }
 function copyToClipboard() {
-  /* ... */
+  navigator.clipboard.writeText(inviteLink.value)
+  toast.success('Link copiato!')
 }
 async function shareItem(item, type, contentField, idSuffix = '') {
-  /* ... */
+  if (!activeAdventureId.value) return
+  const finalId = item.id.toString() + idSuffix
+  const docRef = doc(db, 'adventures', activeAdventureId.value, 'sharedContent', finalId)
+  const dataToShare = { name: item.name || item.title, content: item[contentField], type: type }
+  await setDoc(docRef, dataToShare)
+  toast.info(`"${dataToShare.name}" condiviso.`)
 }
 async function unshareItem(itemId, idSuffix = '') {
-  /* ... */
+  if (!activeAdventureId.value) return
+  const finalId = itemId.toString() + idSuffix
+  const docRef = doc(db, 'adventures', activeAdventureId.value, 'sharedContent', finalId)
+  await deleteDoc(docRef)
+  toast.info('Elemento non più condiviso.')
 }
 async function handleAdventureImageUpload(event, item, fieldName) {
-  /* ... */
+  const file = event.target.files[0]
+  if (!file || !currentAdventure.value) return
+  toast.info('Caricamento...')
+  try {
+    const path = `adventures/${currentAdventure.value.id}/${item.id}`
+    const downloadURL = await uploadImage(file, path)
+    item[fieldName] = downloadURL
+    toast.success('Immagine caricata!')
+  } catch (error) {
+    toast.error('Errore caricamento immagine.')
+  }
 }
 function addMonsterToCombat(monster) {
-  /* ... */
+  if (!currentAdventure.value) return
+  const combatants = currentAdventure.value.combatState.combatants
+  const existingCount = combatants.filter((c) => c.name.startsWith(monster.name)).length
+  const newName = existingCount > 0 ? `${monster.name} ${existingCount + 1}` : monster.name
+  const newMonsterData = {
+    id: Date.now(),
+    name: newName,
+    hp: monster.hp,
+    maxHp: monster.hp,
+    conditions: [],
+    initiative: null,
+    monsterData: monster,
+    type: monster.type,
+    is_pc: false,
+  }
+  combatants.push(newMonsterData)
+  toast.success(`${newName} aggiunto al combattimento!`)
 }
 function updateCombatState(newState) {
-  /* ... */
+  if (currentAdventure.value) {
+    currentAdventure.value.combatState = newState
+  }
 }
 async function removePlayer(playerId) {
-  /* ... */
+  if (!activeAdventureId.value || !playerId) return
+  if (confirm('Sei sicuro di voler rimuovere questo giocatore?')) {
+    const playerDocRef = doc(db, 'adventures', activeAdventureId.value, 'players', playerId)
+    await deleteDoc(playerDocRef)
+    toast.info('Giocatore rimosso.')
+  }
 }
 function addPlayersToCombat() {
-  /* ... */
+  if (!currentAdventure.value || playersInAdventure.value.length === 0) return
+  const combatants = currentAdventure.value.combatState.combatants
+  const currentCombatantIds = new Set(combatants.map((c) => c.id))
+  playersInAdventure.value.forEach((player) => {
+    if (!currentCombatantIds.has(player.id)) {
+      const playerCombatant = {
+        id: player.id,
+        name: player.header.name,
+        hp: player.combat.hp.current,
+        maxHp: player.combat.hp.max,
+        conditions: [],
+        initiative: null,
+        type: player.header.race,
+        is_pc: true,
+        monsterData: player,
+      } // Passa l'intero oggetto player
+      combatants.push(playerCombatant)
+    }
+  })
+  toast.success('Giocatori aggiunti!')
 }
 function importItemFromCode() {
-  /* ... */
+  if (!codeToImport.value) return
+  try {
+    const cleanedCode = codeToImport.value.trim().replace(/,\s*$/, '')
+    const item = JSON.parse(cleanedCode)
+    addAccordionItem(importSectionId.value, item)
+    toast.success(`"${item.name || 'Oggetto'}" importato!`)
+    isCodeImportModalOpen.value = false
+    codeToImport.value = ''
+  } catch (error) {
+    toast.error('Errore: codice non valido.')
+  }
 }
 function toggleAdventures() {
   isAdventuresOpen.value = !isAdventuresOpen.value
@@ -243,12 +324,23 @@ function toggleItem(itemId) {
   expandedItems.value[itemId] = !expandedItems.value[itemId]
 }
 function getAbilityModifier(score) {
-  /* ... */
+  const mod = Math.floor(((Number(score) || 10) - 10) / 2)
+  return mod >= 0 ? `+${mod}` : mod
 }
 const dmDiceHistory = ref([])
 const dmDiceModifier = ref(0)
 function rollDmDice(sides) {
-  /* ... */
+  const result = Math.floor(Math.random() * sides) + 1
+  const total = result + Number(dmDiceModifier.value)
+  const description = `Tiro d${sides}`
+  dmDiceHistory.value.unshift({
+    id: Date.now(),
+    result: total,
+    sides,
+    description,
+    diceResult: result,
+    modifier: Number(dmDiceModifier.value),
+  })
 }
 function toggleChapter(chapterId) {
   expandedChapterId.value = expandedChapterId.value === chapterId ? null : chapterId
@@ -257,13 +349,63 @@ function openPlayerSheet(playerId) {
   router.push({ path: '/', query: { charId: playerId } })
 }
 function addItemToSection(sectionId) {
-  /* ... */
+  if (!currentAdventure.value) return
+  let newItem
+  if (sectionId === 'mostri' || sectionId === 'png') {
+    newItem = {
+      id: Date.now().toString(),
+      name: `Nuovo ${sectionId === 'mostri' ? 'Mostro' : 'PNG'}`,
+      size: 'Media',
+      type: 'umanoide',
+      alignment: 'qualsiasi allineamento',
+      ac: 10,
+      hp: 10,
+      hp_dice: '2d8',
+      speed: '9 m',
+      ability_scores: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+      skills: '',
+      senses: '',
+      languages: '',
+      challenge_rating: '1/8',
+      description: '',
+      image_url: '',
+      traits: '',
+      actions: '',
+      dm_prompt: '',
+    }
+  } else {
+    newItem = {
+      id: Date.now().toString(),
+      name: `Nuovo ${sectionId.slice(0, -1)}`,
+      shareNotes: '',
+      dmNotes: '',
+      imageUrl: '',
+    }
+  }
+  if (!currentAdventure.value[sectionId]) {
+    currentAdventure.value[sectionId] = []
+  }
+  currentAdventure.value[sectionId].push(newItem)
 }
 function removeItemFromSection(sectionId, itemToRemove) {
-  /* ... */
+  if (!currentAdventure.value || !currentAdventure.value[sectionId]) return
+  const index = currentAdventure.value[sectionId].findIndex((item) => item.id === itemToRemove.id)
+  if (index !== -1) {
+    currentAdventure.value[sectionId].splice(index, 1)
+  }
 }
 function addChapter() {
-  /* ... */
+  if (!currentAdventure.value) return
+  if (!currentAdventure.value.chapters) {
+    currentAdventure.value.chapters = []
+  }
+  const newChapter = {
+    id: Date.now().toString(),
+    title: `Nuovo Capitolo ${currentAdventure.value.chapters.length + 1}`,
+    content: '',
+    shareContent: '',
+  }
+  currentAdventure.value.chapters.push(newChapter)
 }
 </script>
 
