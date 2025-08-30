@@ -1022,38 +1022,38 @@ watch(
               ></textarea>
             </div>
           </div>
-          <div class="grid-item full-width character-portrait-controls">
+          <div class="character-image-area">
             <label>Immagine Personaggio</label>
             <img
               v-if="character.header.appearance.imageUrl"
               :src="character.header.appearance.imageUrl"
+              alt="Immagine Personaggio"
               class="character-image"
-              alt="Ritratto"
             />
-
-            <div class="image-control-group">
+            <div v-else class="image-placeholder">Nessuna Immagine</div>
+            <div class="image-controls">
               <label for="portrait-upload" class="upload-btn">Carica da PC</label>
               <input
                 id="portrait-upload"
                 type="file"
                 @change="handlePortraitUpload"
                 accept="image/*"
-                hidden
+                style="display: none"
               />
               <span class="or-divider">o</span>
               <input
                 type="text"
                 v-model="character.header.appearance.imageUrl"
-                placeholder="Incolla URL esterno..."
+                placeholder="Incolla URL"
                 class="url-input"
               />
               <button
                 v-if="character.header.appearance.imageUrl"
                 @click="removeImage('imageUrl')"
-                class="btn-remove-image"
+                class="remove-image-btn"
                 title="Rimuovi immagine"
               >
-                &times;
+                ×
               </button>
             </div>
           </div>
@@ -1839,25 +1839,14 @@ textarea {
   flex-direction: column;
   gap: 10px;
 }
-.character-image {
-  width: 100%;
-  height: 250px; /* Diamo un'altezza fissa alla cornice */
-  object-fit: cover; /* L'immagine riempie la cornice senza deformarsi */
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background-color: #f0f0f0;
-}
-
+/* CORREZIONE PER L'IMMAGINE */
+.character-image,
 .image-placeholder {
   width: 100%;
-  height: 250px; /* Diamo la stessa altezza anche al segnaposto */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 2px dashed #ccc;
+  height: 250px;
+  object-fit: cover;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  color: #aaa;
-  font-family: sans-serif;
 }
 .stats-grid {
   display: grid;
@@ -2580,23 +2569,31 @@ textarea {
   flex-wrap: wrap; /* Permette ai controlli di andare a capo su schermi piccoli */
 }
 
-/* Stile per l'input URL */
-.url-input {
-  flex-grow: 1; /* Permette all'input di espandersi il più possibile */
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 0.9em;
-  min-width: 150px; /* Larghezza minima per l'input */
+.image-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
-
-/* Divisore "o" */
+.url-input {
+  flex-grow: 1;
+  min-width: 80px; /* Evita che diventi troppo piccolo */
+}
 .or-divider {
   font-style: italic;
   color: #555;
-  flex-shrink: 0; /* Impedisce che si rimpicciolisca troppo */
 }
-
+.remove-image-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 1.2em;
+  cursor: pointer;
+  flex-shrink: 0;
+}
 /* Pulsante per rimuovere l'immagine */
 .btn-remove-image {
   background-color: #e74c3c; /* Rosso */

@@ -2,8 +2,12 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  monster: { type: Object, required: true },
+  monster: {
+    type: Object,
+    required: true,
+  },
 })
+
 defineEmits(['close'])
 
 const imageUrl = computed(() => {
@@ -72,7 +76,6 @@ const formatText = (textBlock) => {
           >,
           <span class="alignment">{{ monster.alignment }}</span>
         </p>
-
         <div
           v-if="monster.description"
           class="details-section description-text"
@@ -83,7 +86,6 @@ const formatText = (textBlock) => {
           class="details-section"
           v-html="formatText(monster.shareNotes)"
         ></div>
-
         <hr class="separator" />
         <div class="monster-stats">
           <p>
@@ -196,13 +198,21 @@ const formatText = (textBlock) => {
   cursor: pointer;
   color: #888;
 }
-
 .monster-details-content {
   overflow-y: auto;
   padding: 20px;
   font-family: 'Times New Roman', serif;
 }
-
+.monster-image {
+  width: 100%;
+  max-height: 300px; /* Limita l'altezza massima */
+  height: auto; /* Mantiene le proporzioni */
+  object-fit: contain; /* Mostra l'intera immagine senza tagliarla o deformarla */
+  object-position: center;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  background-color: #f0f0f0;
+}
 .monster-meta {
   font-style: italic;
   font-size: 1.1em;
@@ -216,18 +226,20 @@ const formatText = (textBlock) => {
 .alignment {
   font-style: normal;
 }
-
 .separator {
   border: 0;
   height: 1px;
-  background-image: linear-gradient(to right, #ccc, #fdfaf6, #ccc);
+  background-image: linear-gradient(
+    to right,
+    rgba(188, 167, 137, 0),
+    rgba(188, 167, 137, 0.75),
+    rgba(188, 167, 137, 0)
+  );
   margin: 10px 0;
 }
-
 .monster-stats p {
   margin: 5px 0;
 }
-
 .ability-scores {
   display: flex;
   justify-content: space-around;
@@ -241,11 +253,9 @@ const formatText = (textBlock) => {
   padding: 5px;
   min-width: 60px;
 }
-
 .details-section {
   margin-top: 15px;
 }
-
 .details-section h3 {
   font-size: 1.3em;
   font-weight: bold;
@@ -253,27 +263,15 @@ const formatText = (textBlock) => {
   margin-bottom: 5px;
   color: #a04000;
 }
-
-.trait-entry p,
-.action-entry p {
-  margin: 5px 0;
-  line-height: 1.4;
+.details-section :deep(p) {
+  margin: 8px 0;
+  line-height: 1.5;
 }
-
-.action-entry p strong {
-  display: block;
-  margin-bottom: 3px;
+.details-section :deep(p > strong) {
+  font-style: italic;
+  font-weight: bold;
+  color: #5c3d03;
 }
-.monster-image {
-  width: 100%;
-  height: 300px; /* Altezza fissa per un layout prevedibile */
-  object-fit: cover; /* Riempie lo spazio senza deformare l'immagine */
-  border-radius: 6px;
-  margin-bottom: 15px;
-  border: 1px solid #ddd;
-  background-color: #eee;
-}
-/* Aggiungi in fondo a <style scoped> di MonsterDetails.vue */
 .dm-notes {
   background-color: #fff8e1;
   padding: 10px;

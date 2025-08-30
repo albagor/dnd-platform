@@ -543,44 +543,42 @@ function setImageFromUrl(item, fieldName, event) {
                   </button>
                   <span class="toggle-icon">{{ expandedItems[item.id] ? '▼' : '▶' }}</span>
                 </div>
-                <div v-if="expandedItems[item.id]" class="stat-block-editor">
-                  <div class="grid-item full-width">
-                    <label>Immagine</label>
-                    <img
-                      v-if="item.image_url"
-                      :src="item.image_url"
-                      class="monster-editor-image"
-                      alt="Anteprima"
-                    />
+<div v-if="expandedItems[item.id]" class="stat-block-editor">
+    <div class="grid-item full-width">
+        <label>Immagine</label>
+        <img v-if="item.image_url" :src="item.image_url" class="monster-editor-image" alt="Anteprima" />
 
-                    <div class="image-control-group">
-                      <label :for="'monster-upload-' + item.id" class="upload-btn"
-                        >Carica da PC</label
-                      >
-                      <input
-                        :id="'monster-upload-' + item.id"
-                        type="file"
-                        @change="handleAdventureImageUpload($event, item, 'image_url')"
-                        accept="image/*"
-                        hidden
-                      />
-                      <span class="or-divider">o</span>
-                      <input
-                        type="text"
-                        v-model="item.image_url"
-                        placeholder="Incolla URL esterno..."
-                        class="url-input"
-                      />
-                      <button
-                        v-if="item.image_url"
-                        @click="removeImage(item, 'image_url')"
-                        class="btn-remove-image"
-                        title="Rimuovi immagine"
-                      >
-                        &times;
-                      </button>
-                    </div>
-                  </div>
+        <div class="image-controls-wrapper">
+            <div class="image-input-group">
+                <label :for="'monster-upload-' + item.id" class="upload-btn">Carica da PC</label>
+                <input
+                    :id="'monster-upload-' + item.id"
+                    type="file"
+                    @change="handleAdventureImageUpload($event, item, 'image_url')"
+                    accept="image/*"
+                    style="display: none"
+                />
+                <span class="or-divider">o</span>
+                <input
+                    type="text"
+                    v-model="item.image_url"
+                    placeholder="Incolla URL esterno..."
+                    class="url-input"
+                />
+            </div>
+            <div class="image-actions">
+                 <button v-if="item.image_url" @click="removeImage(item, 'image_url')" class="btn-remove-image" title="Rimuovi immagine">
+                    Rimuovi
+                </button>
+                <button v-if="item.image_url && !sharedItemIds.has(item.id + '_img')" @click="shareItem(item, 'immagine', 'image_url', '_img')" class="share-btn">
+                    Condividi Img
+                </button>
+                <button v-else-if="item.image_url" @click="unshareItem(item.id, '_img')" class="unshare-btn">
+                    Nascondi Img
+                </button>
+            </div>
+        </div>
+    </div>
                   <div class="grid-item full-width">
                     <label>Descrizione (Lore, Aspetto)</label>
                     <textarea
@@ -1583,10 +1581,7 @@ function setImageFromUrl(item, fieldName, event) {
 
 .image-actions {
   display: flex;
-  flex-wrap: wrap; /* Permette il wrap su schermi piccoli */
-  gap: 8px;
-  justify-content: center;
-  width: 100%;
+  gap: 10px;
 }
 
 .input-image-url {
@@ -1607,8 +1602,7 @@ function setImageFromUrl(item, fieldName, event) {
 
 .or-divider {
   font-style: italic;
-  color: #777;
-  margin: 5px 0;
+  color: #555;
 }
 
 .btn-danger {
@@ -1624,11 +1618,21 @@ function setImageFromUrl(item, fieldName, event) {
 .btn-danger:hover {
   background-color: #c82333;
 }
+.image-controls-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
 .image-input-group {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 5px;
+  width: 100%;
+}
+.image-input-group .url-input {
+  flex-grow: 1; /* Permette all'input di occupare lo spazio rimanente */
+  min-width: 100px; /* Evita che diventi troppo piccolo */
 }
 .url-input {
   flex-grow: 1;
@@ -1665,21 +1669,14 @@ function setImageFromUrl(item, fieldName, event) {
 
 /* Pulsante per rimuovere l'immagine */
 .btn-remove-image {
-  background-color: #e74c3c; /* Rosso */
+  background-color: #e74c3c;
   color: white;
   border: none;
-  border-radius: 50%; /* Tondo */
-  width: 28px;
-  height: 28px;
-  font-size: 1.2em;
-  line-height: 1; /* Centra la X */
+  padding: 5px 10px;
+  border-radius: 4px;
   cursor: pointer;
-  padding: 0;
-  flex-shrink: 0; /* Impedisce che si rimpicciolisca */
-  display: flex; /* Centra la X con flexbox */
-  justify-content: center;
-  align-items: center;
-  transition: background-color 0.2s;
+  font-size: 0.8em;
+  font-weight: bold;
 }
 
 .btn-remove-image:hover {
@@ -1694,6 +1691,19 @@ function setImageFromUrl(item, fieldName, event) {
 .character-portrait-controls .image-control-group {
   justify-content: center; /* Centra i controlli sotto il ritratto */
 }
+/* CORREZIONE PER LE IMMAGINI */
+.item-image,
+.monster-editor-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover; /* Forza il riempimento corretto */
+  object-position: center; /* Centra l'immagine */
+  border-radius: 4px;
+  margin-bottom: 5px;
+  border: 1px solid #ddd;
+  background-color: #f8f8f8;
+}
+
 </style>
 
 <style>
