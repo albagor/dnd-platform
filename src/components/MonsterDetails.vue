@@ -72,6 +72,18 @@ const formatText = (textBlock) => {
           >,
           <span class="alignment">{{ monster.alignment }}</span>
         </p>
+
+        <div
+          v-if="monster.description"
+          class="details-section description-text"
+          v-html="formatText(monster.description)"
+        ></div>
+        <div
+          v-if="monster.shareNotes"
+          class="details-section"
+          v-html="formatText(monster.shareNotes)"
+        ></div>
+
         <hr class="separator" />
         <div class="monster-stats">
           <p>
@@ -102,7 +114,7 @@ const formatText = (textBlock) => {
             <strong>CAR</strong><br />{{ monster.ability_scores.cha }} ({{ abilityModifiers.cha }})
           </div>
         </div>
-        <hr class="separator" />
+        <hr class="separator" v-if="monster.ability_scores" />
         <div
           class="details-section"
           v-if="monster.skills || monster.senses || monster.languages || monster.challenge_rating"
@@ -120,11 +132,6 @@ const formatText = (textBlock) => {
             <strong>Grado Sfida:</strong> {{ monster.challenge_rating }}
           </p>
         </div>
-        <div
-          v-if="monster.description && !monster.traits"
-          class="details-section"
-          v-html="formatText(monster.description)"
-        ></div>
         <hr class="separator" v-if="monster.traits" />
         <div
           v-if="monster.traits"
@@ -136,10 +143,10 @@ const formatText = (textBlock) => {
           <h3>Azioni</h3>
           <div v-html="formatText(monster.actions)"></div>
         </div>
-        <hr class="separator" v-if="monster.dm_prompt" />
-        <div v-if="monster.dm_prompt" class="details-section dm-notes">
-          <h3>Spunto per il DM</h3>
-          <p>{{ monster.dm_prompt }}</p>
+        <hr class="separator" v-if="monster.dmNotes || monster.dm_prompt" />
+        <div v-if="monster.dmNotes || monster.dm_prompt" class="details-section dm-notes">
+          <h3>Note del DM</h3>
+          <p>{{ monster.dmNotes || monster.dm_prompt }}</p>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ import { useAdventureStore } from '@/stores/adventureStore'
 import { storeToRefs } from 'pinia'
 import MonsterDetails from './MonsterDetails.vue'
 import CharacterStatBlock from './CharacterStatBlock.vue'
+import ItemDetails from './ItemDetails.vue' // <-- 1. IMPORTA IL COMPONENTE MANCANTE
 
 const toast = useToast()
 const adventureStore = useAdventureStore()
@@ -33,6 +34,8 @@ const itemsToAdd = ref([])
 // Stato per la modale "Dettagli Elemento"
 const isMonsterDetailsModalOpen = ref(false)
 const selectedMonsterForModal = ref(null)
+const isItemDetailsModalOpen = ref(false) // <-- 2. AGGIUNGI STATO
+const selectedItemForModal = ref(null) // <-- 2. AGGIUNGI STATO
 
 onMounted(() => {
   compendiumData.forEach((cat) => {
@@ -52,90 +55,6 @@ onMounted(() => {
 onUnmounted(() => {
   if (lorebookListener) lorebookListener()
 })
-
-// FUNZIONE WATCH CORRETTA E SEMPLIFICATA
-watch(selectedAdventureId, async (newId) => {
-  if (newId) {
-    const advDoc = await getDoc(doc(db, 'adventures', newId))
-    if (advDoc.exists()) {
-      adventureDetails.value = advDoc.data()
-    }
-  } else {
-    adventureDetails.value = null
-  }
-})
-
-const itemCategories = computed(() => {
-  if (!adventureDetails.value) return []
-  const categories = ['ambienti', 'png', 'mostri', 'tesori', 'mappe', 'immagini']
-  // Filtra le categorie assicurandosi che esistano e non siano vuote
-  return categories.filter(
-    (cat) =>
-      adventureDetails.value[cat] &&
-      Array.isArray(adventureDetails.value[cat]) &&
-      adventureDetails.value[cat].length > 0,
-  )
-})
-
-function toggleItemSelection(item, adventureId, type, isSelected) {
-  const itemReference = { itemId: item.id, adventureId: adventureId, name: item.name, type: type }
-  if (isSelected) {
-    if (!itemsToAdd.value.find((i) => i.itemId === item.id)) {
-      itemsToAdd.value.push(itemReference)
-    }
-  } else {
-    itemsToAdd.value = itemsToAdd.value.filter((i) => i.itemId !== item.id)
-  }
-}
-
-function addSelectedItemsToGroup() {
-  const group = lorebook.value.groups.find((g) => g.id === currentGroupForAdding.value.id)
-  if (!group) return
-  if (!group.items) group.items = []
-
-  itemsToAdd.value.forEach((itemToAdd) => {
-    if (!group.items.some((existingItem) => existingItem.itemId === itemToAdd.itemId)) {
-      group.items.push(itemToAdd)
-    }
-  })
-
-  saveLorebook()
-  isAddItemModalOpen.value = false
-}
-
-async function openLinkedItem(item) {
-  const advDoc = await getDoc(doc(db, 'adventures', item.adventureId))
-  if (advDoc.exists()) {
-    const adventureData = advDoc.data()
-    if (adventureData[item.type] && Array.isArray(adventureData[item.type])) {
-      const fullItem = adventureData[item.type].find((i) => i.id === item.itemId)
-      if (fullItem) {
-        selectedMonsterForModal.value = fullItem
-        isMonsterDetailsModalOpen.value = true
-      }
-    }
-  }
-}
-
-// Il resto delle funzioni rimane invariato
-const filteredData = computed(() => {
-  if (!searchTerm.value) return compendiumData
-  const lowerCaseSearch = searchTerm.value.toLowerCase()
-  return compendiumData
-    .map((category) => {
-      const filteredRules = category.rules.filter(
-        (rule) =>
-          rule.name.toLowerCase().includes(lowerCaseSearch) ||
-          rule.description.toLowerCase().includes(lowerCaseSearch),
-      )
-      return { ...category, rules: filteredRules }
-    })
-    .filter((category) => category.rules.length > 0)
-})
-
-function toggleCategory(categoryName) {
-  openCategories.value[categoryName] = !openCategories.value[categoryName]
-}
 
 async function saveLorebook() {
   if (!auth.currentUser) return
@@ -157,10 +76,20 @@ function addGroup() {
 }
 
 function removeGroup(groupId) {
-  if (confirm('Sei sicuro di voler eliminare questo gruppo?')) {
+  if (confirm('Sei sicuro di voler eliminare questo gruppo e tutti i suoi collegamenti?')) {
     lorebook.value.groups = lorebook.value.groups.filter((group) => group.id !== groupId)
     saveLorebook()
   }
+}
+
+function removeItemFromGroup(group, itemToRemove) {
+  const groupIndex = lorebook.value.groups.findIndex((g) => g.id === group.id)
+  if (groupIndex === -1) return
+  const updatedItems = lorebook.value.groups[groupIndex].items.filter(
+    (item) => item.itemId !== itemToRemove.itemId,
+  )
+  lorebook.value.groups[groupIndex].items = updatedItems
+  saveLorebook()
 }
 
 async function openAddItemModal(group) {
@@ -169,6 +98,95 @@ async function openAddItemModal(group) {
   adventureDetails.value = null
   itemsToAdd.value = []
   isAddItemModalOpen.value = true
+}
+
+watch(selectedAdventureId, async (newId) => {
+  if (newId) {
+    const advDoc = await getDoc(doc(db, 'adventures', newId))
+    if (advDoc.exists()) {
+      const defaultSections = {
+        ambienti: [],
+        png: [],
+        mostri: [],
+        tesori: [],
+        mappe: [],
+        immagini: [],
+      }
+      adventureDetails.value = { ...defaultSections, ...advDoc.data() }
+    }
+  } else {
+    adventureDetails.value = null
+  }
+})
+
+const itemCategories = computed(() => {
+  if (!adventureDetails.value) return []
+  return ['ambienti', 'png', 'mostri', 'tesori', 'mappe', 'immagini'].filter(
+    (cat) => adventureDetails.value[cat] && adventureDetails.value[cat].length > 0,
+  )
+})
+
+function toggleItemSelection(item, adventureId, type, isSelected) {
+  const itemReference = { itemId: item.id, adventureId: adventureId, name: item.name, type: type }
+  if (isSelected) {
+    if (!itemsToAdd.value.find((i) => i.itemId === item.id)) {
+      itemsToAdd.value.push(itemReference)
+    }
+  } else {
+    itemsToAdd.value = itemsToAdd.value.filter((i) => i.itemId !== item.id)
+  }
+}
+
+function addSelectedItemsToGroup() {
+  const group = lorebook.value.groups.find((g) => g.id === currentGroupForAdding.value.id)
+  if (!group) return
+  if (!group.items) group.items = []
+  itemsToAdd.value.forEach((itemToAdd) => {
+    if (!group.items.some((existingItem) => existingItem.itemId === itemToAdd.itemId)) {
+      group.items.push(itemToAdd)
+    }
+  })
+  saveLorebook()
+  isAddItemModalOpen.value = false
+}
+
+async function openLinkedItem(item) {
+  const advDoc = await getDoc(doc(db, 'adventures', item.adventureId))
+  if (advDoc.exists()) {
+    const adventureData = advDoc.data()
+    if (adventureData[item.type] && Array.isArray(adventureData[item.type])) {
+      const fullItem = adventureData[item.type].find((i) => i.id === item.itemId)
+      if (fullItem) {
+        // --- LOGICA DI SMISTAMENTO ---
+        if (fullItem.ability_scores) {
+          // È un Mostro o un PNG
+          selectedMonsterForModal.value = fullItem
+          isMonsterDetailsModalOpen.value = true
+        } else {
+          // È un Ambiente, Tesoro, ecc.
+          selectedItemForModal.value = fullItem
+          isItemDetailsModalOpen.value = true
+        }
+      }
+    }
+  }
+}
+const filteredData = computed(() => {
+  if (!searchTerm.value) return compendiumData
+  const lowerCaseSearch = searchTerm.value.toLowerCase()
+  return compendiumData
+    .map((category) => {
+      const filteredRules = category.rules.filter(
+        (rule) =>
+          rule.name.toLowerCase().includes(lowerCaseSearch) ||
+          rule.description.toLowerCase().includes(lowerCaseSearch),
+      )
+      return { ...category, rules: filteredRules }
+    })
+    .filter((category) => category.rules.length > 0)
+})
+function toggleCategory(categoryName) {
+  openCategories.value[categoryName] = !openCategories.value[categoryName]
 }
 </script>
 
@@ -238,30 +256,78 @@ async function openAddItemModal(group) {
             Nessun elemento collegato a questo gruppo.
           </p>
           <ul v-else class="linked-item-list">
-            <li
-              v-for="item in group.items"
-              :key="item.itemId"
-              @click="openLinkedItem(item)"
-              title="Vedi Dettagli"
-            >
-              <span class="item-name">{{ item.name }}</span>
-              <span class="item-type">({{ item.type }})</span>
+            <li v-for="item in group.items" :key="item.itemId">
+              <div class="linked-item-info" @click="openLinkedItem(item)" title="Vedi Dettagli">
+                <span class="item-name">{{ item.name }}</span>
+                <span class="item-type">({{ item.type }})</span>
+              </div>
+              <button
+                @click="removeItemFromGroup(group, item)"
+                class="remove-linked-item-btn"
+                title="Rimuovi collegamento"
+              >
+                ×
+              </button>
             </li>
           </ul>
         </div>
       </div>
     </div>
 
-    <div
-      v-if="isAddItemModalOpen"
-      class="modal-overlay"
-      @click.self="isAddItemModalOpen = false"
-    ></div>
+    <div v-if="isAddItemModalOpen" class="modal-overlay" @click.self="isAddItemModalOpen = false">
+      <div class="modal-content large">
+        <h3>Collega Elementi a: {{ currentGroupForAdding.name }}</h3>
+
+        <div class="adventure-selector">
+          <label>Scegli un'avventura:</label>
+          <select v-model="selectedAdventureId">
+            <option :value="null" disabled>-- Seleziona --</option>
+            <option v-for="adv in adventuresList" :key="adv.id" :value="adv.id">
+              {{ adv.title }}
+            </option>
+          </select>
+        </div>
+
+        <div v-if="adventureDetails" class="item-selection-grid">
+          <div v-for="category in itemCategories" :key="category" class="item-category">
+            <h4>{{ category }}</h4>
+            <ul>
+              <li v-for="item in adventureDetails[category]" :key="item.id">
+                <label>
+                  <input
+                    type="checkbox"
+                    @change="
+                      toggleItemSelection(
+                        item,
+                        selectedAdventureId,
+                        category,
+                        $event.target.checked,
+                      )
+                    "
+                  />
+                  {{ item.name }}
+                </label>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button @click="isAddItemModalOpen = false" class="btn-secondary">Annulla</button>
+          <button @click="addSelectedItemsToGroup" class="btn-primary">Aggiungi Selezionati</button>
+        </div>
+      </div>
+    </div>
 
     <MonsterDetails
       v-if="isMonsterDetailsModalOpen"
       :monster="selectedMonsterForModal"
       @close="isMonsterDetailsModalOpen = false"
+    />
+    <ItemDetails
+      v-if="isItemDetailsModalOpen"
+      :item="selectedItemForModal"
+      @close="isItemDetailsModalOpen = false"
     />
   </div>
 </template>
@@ -432,14 +498,20 @@ h1 {
 }
 .linked-item-list li {
   background: #f8f8f8;
-  padding: 8px;
+  padding: 8px 12px;
   border-radius: 4px;
   margin-bottom: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.linked-item-list li:hover {
-  background-color: #e9ecef;
+.linked-item-info {
+  cursor: pointer;
+  flex-grow: 1;
+  transition: color 0.2s;
+}
+.linked-item-info:hover .item-name {
+  color: #3498db;
 }
 .linked-item-list .item-name {
   font-weight: bold;
@@ -449,14 +521,29 @@ h1 {
   color: #777;
   margin-left: 5px;
 }
-
+.remove-linked-item-btn {
+  background-color: #c0392b;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 0.9em;
+  line-height: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -509,6 +596,8 @@ h1 {
   gap: 1rem;
   max-height: 400px;
   overflow-y: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
 }
 .item-category h4 {
   margin-top: 0;
