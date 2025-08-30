@@ -146,40 +146,24 @@ main.responsive-layout {
 
 <style>
 /* N.B. SENZA "scoped" */
-/* Stile globale per le anteprime delle immagini caricate */
-.character-image,
-.monster-editor-image,
-.item-image {
+
+.character-image {
   width: 100%;
-  height: 200px; /* Altezza fissa per coerenza */
-  object-fit: cover; /* Riempie lo spazio senza deformare l'immagine */
-  border-radius: 4px;
-  border: 1px solid #ddd;
+  height: 250px; /* Altezza fissa per la cornice */
+  object-fit: cover; /* L'immagine riempie la cornice senza deformarsi */
+  border: 1px solid #ccc;
+  border-radius: 8px;
   background-color: #f0f0f0;
-  display: block; /* Evita spazi extra sotto l'immagine */
 }
-.character-image,
-.monster-editor-image,
-.item-image {
+.image-placeholder {
   width: 100%;
-  height: 200px;
-  object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  background-color: #f0f0f0;
-  display: block;
-}
-/* Stile globale per le anteprime delle immagini */
-.character-image,
-.monster-editor-image,
-.item-image {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  background-color: #f0f0f0;
-  display: block;
+  height: 250px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  color: #aaa;
 }
 
 /* Stile globale per il pulsante di upload */
@@ -198,5 +182,32 @@ main.responsive-layout {
 }
 .upload-btn:hover {
   background-color: #2980b9;
+}
+
+/* Stile globale per le anteprime delle immagini caricate */
+.character-image,
+.monster-editor-image,
+.item-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: #f0f0f0;
+  display: block;
+}
+
+/* Stile globale per i link dinamici nel testo */
+.linked-item {
+  background-color: #e3f2fd;
+  color: #0d47a1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+.linked-item:hover {
+  background-color: #bbdefb;
 }
 </style>

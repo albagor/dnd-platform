@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue' // Aggiunto onUnmounted
 import { useRoute } from 'vue-router' // Importa useRoute
 import { dndClasses, dndRaces, dndHitDice } from '../data/dndData.js'
 import { dndDefensiveItems } from '@/data/dndDefensiveItems.js'
@@ -17,13 +17,18 @@ import FeaturesAndTraits from './FeaturesAndTraits.vue'
 import InventorySection from './InventorySection.vue'
 import Grimoire from './Grimoire.vue'
 import { auth, db } from '@/firebaseConfig'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore' // Aggiunto onSnapshot
 import { useToast } from 'vue-toastification'
 import { uploadImage } from '@/services/storageService.js' // <-- Aggiungi questo import
+import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage'
+
+const firebaseStorage = getStorage()
 
 const route = useRoute() // Permette di leggere l'URL
 const toast = useToast()
 const isInitialLoad = ref(true)
+let characterListener = null; // Variabile per l'ascoltatore in tempo reale
+
 
 // STATO DEL COMPONENTE
 const isAnagraficaOpen = ref(true)
@@ -773,25 +778,111 @@ const spellAttackBonus = computed(() =>
   spellcastingAbility.value ? proficiencyBonusByLevel.value + spellcastingAbilityModifier.value : 0,
 )
 // --- NUOVA FUNZIONE PER GESTIRE L'UPLOAD ---
+// Modifica handlePortraitUpload per usare il path corretto
 async function handlePortraitUpload(event) {
   const file = event.target.files[0]
-  if (!file) return
-
-  toast.info("Caricamento dell'immagine in corso...")
-
+  if (!file || !character.value) return
+  toast.info('Caricamento...')
   try {
-    const path = `character-portraits/${auth.currentUser.uid}`
+    const path = `characters/${character.value.id}/${file.name}` // Path corretto per i personaggi
     const downloadURL = await uploadImage(file, path)
-
-    // Salva il nuovo URL nell'oggetto character, il che attiverà il salvataggio automatico
     character.value.header.appearance.imageUrl = downloadURL
-
     toast.success('Immagine caricata!')
   } catch (error) {
-    console.error("Errore durante l'upload:", error)
-    toast.error("Errore durante il caricamento dell'immagine.")
+    toast.error('Errore caricamento immagine.')
   }
 }
+// Modifica per usare setImageFromUrl (se non ce l'hai già)
+function setImageFromUrl(event) {
+  character.value.header.appearance.imageUrl = event.target.value
+  toast.success('URL immagine salvato!')
+}
+// --- FUNZIONE `removeImage` SPECIFICA PER CHARACTERSHEET ---
+async function removeImage(fieldName) {
+  // fieldName sarà 'header.appearance.imageUrl'
+  if (!character.value || !character.value.header.appearance[fieldName]) return
+
+  if (confirm('Sei sicuro di voler eliminare questa immagine?')) {
+    const imageUrl = character.value.header.appearance[fieldName]
+    const isFirebaseImage = imageUrl.includes('firebasestorage.googleapis.com')
+
+    if (isFirebaseImage) {
+      try {
+        // Il path per il personaggio sarà diverso, ad es: characters/<charId>/<imageName>
+        // Devi estrarre il path corretto dall'URL di Firebase Storage
+        const pathRegex = /characters%2F(.*?)\?/ // Adatta il regex al tuo path esatto di CharacterSheet
+        const match = imageUrl.match(pathRegex)
+        if (match && match[1]) {
+          const filePath = decodeURIComponent(match[1])
+          const imageRef = storageRef(firebaseStorage, filePath)
+          await deleteObject(imageRef)
+          toast.success('Immagine eliminata da Storage.')
+        } else {
+          console.warn('Impossibile estrarre il percorso da Firebase Storage URL:', imageUrl)
+          toast.info('Immagine rimossa dal personaggio, ma non da Storage (percorso non valido).')
+        }
+      } catch (error) {
+        console.error("Errore durante l'eliminazione da Firebase Storage:", error)
+        toast.error("Errore durante l'eliminazione dell'immagine da Storage.")
+      }
+    } else {
+      toast.info('URL immagine rimosso dal personaggio.')
+    }
+    character.value.header.appearance[fieldName] = '' // Rimuovi l'URL
+  }
+}
+/ Funzione per caricare E ASCOLTARE la scheda
+function setupCharacterListener(userId) {
+  if (characterListener) characterListener(); // Interrompe l'ascolto precedente
+
+  const docRef = doc(db, 'characterSheets', userId);
+  characterListener = onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      character.value = { id: docSnap.id, ...docSnap.data() };
+    } else {
+      // Se non esiste, mostra una scheda vuota
+      character.value = JSON.parse(JSON.stringify(defaultCharacter));
+    }
+  }, (error) => {
+    console.error("Errore nell'ascolto della scheda:", error);
+    toast.error("Errore di sincronizzazione della scheda.");
+  });
+}
+
+onMounted(() => {
+  const targetUserId = route.query.charId || auth.currentUser?.uid;
+  if (targetUserId) {
+    setupCharacterListener(targetUserId);
+  }
+});
+
+// Gestisce il cambio di scheda (es. da un PG a un altro)
+onBeforeRouteUpdate((to, from) => {
+  const newTargetId = to.query.charId || auth.currentUser?.uid;
+  if (newTargetId && newTargetId !== (from.query.charId || auth.currentUser?.uid)) {
+    setupCharacterListener(newTargetId);
+  }
+});
+
+onUnmounted(() => {
+  if (characterListener) characterListener(); // Interrompe l'ascolto quando si lascia la pagina
+});
+
+// Watcher per il salvataggio (ora più semplice)
+let debounceTimer = null;
+watch(character, (newData) => {
+  if (!newData || !newData.id) return;
+
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    const docRef = doc(db, 'characterSheets', newData.id);
+    try {
+      await setDoc(docRef, JSON.parse(JSON.stringify(newData)));
+    } catch (error) {
+      toast.error('Errore nel salvataggio della scheda.');
+    }
+  }, 1500);
+}, { deep: true });
 </script>
 
 <template>
@@ -923,23 +1014,39 @@ async function handlePortraitUpload(event) {
               ></textarea>
             </div>
           </div>
-          <div class="character-image-area">
+          <div class="grid-item full-width character-portrait-controls">
+            <label>Immagine Personaggio</label>
             <img
               v-if="character.header.appearance.imageUrl"
               :src="character.header.appearance.imageUrl"
-              alt="Immagine Personaggio"
               class="character-image"
+              alt="Ritratto"
             />
-            <div v-else class="image-placeholder">Nessuna Immagine</div>
-            <div class="grid-item">
-              <label for="portrait-upload" class="upload-btn">Carica Immagine</label>
+
+            <div class="image-control-group">
+              <label for="portrait-upload" class="upload-btn">Carica da PC</label>
               <input
                 id="portrait-upload"
                 type="file"
                 @change="handlePortraitUpload"
                 accept="image/*"
-                style="display: none"
+                hidden
               />
+              <span class="or-divider">o</span>
+              <input
+                type="text"
+                v-model="character.header.appearance.imageUrl"
+                placeholder="Incolla URL esterno..."
+                class="url-input"
+              />
+              <button
+                v-if="character.header.appearance.imageUrl"
+                @click="removeImage('imageUrl')"
+                class="btn-remove-image"
+                title="Rimuovi immagine"
+              >
+                &times;
+              </button>
             </div>
           </div>
         </div>
@@ -1722,15 +1829,16 @@ textarea {
 }
 .character-image {
   width: 100%;
-  height: 200px;
-  object-fit: cover;
+  height: 250px; /* Diamo un'altezza fissa alla cornice */
+  object-fit: cover; /* L'immagine riempie la cornice senza deformarsi */
   border: 1px solid #ccc;
   border-radius: 8px;
   background-color: #f0f0f0;
 }
+
 .image-placeholder {
   width: 100%;
-  height: 200px;
+  height: 250px; /* Diamo la stessa altezza anche al segnaposto */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2450,5 +2558,62 @@ textarea {
   .spell-slots-grid {
     grid-template-columns: 1fr;
   }
+}
+/* Container per i controlli di caricamento/URL/rimozione immagine */
+.image-control-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap; /* Permette ai controlli di andare a capo su schermi piccoli */
+}
+
+/* Stile per l'input URL */
+.url-input {
+  flex-grow: 1; /* Permette all'input di espandersi il più possibile */
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 0.9em;
+  min-width: 150px; /* Larghezza minima per l'input */
+}
+
+/* Divisore "o" */
+.or-divider {
+  font-style: italic;
+  color: #555;
+  flex-shrink: 0; /* Impedisce che si rimpicciolisca troppo */
+}
+
+/* Pulsante per rimuovere l'immagine */
+.btn-remove-image {
+  background-color: #e74c3c; /* Rosso */
+  color: white;
+  border: none;
+  border-radius: 50%; /* Tondo */
+  width: 28px;
+  height: 28px;
+  font-size: 1.2em;
+  line-height: 1; /* Centra la X */
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0; /* Impedisce che si rimpicciolisca */
+  display: flex; /* Centra la X con flexbox */
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.btn-remove-image:hover {
+  background-color: #c0392b; /* Rosso più scuro al hover */
+}
+
+/* Stile specifico per il contenitore del ritratto del personaggio */
+.character-portrait-controls {
+  text-align: center;
+}
+
+.character-portrait-controls .image-control-group {
+  justify-content: center; /* Centra i controlli sotto il ritratto */
 }
 </style>

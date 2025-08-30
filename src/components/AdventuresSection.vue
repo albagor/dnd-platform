@@ -14,6 +14,9 @@ import MonsterDetails from './MonsterDetails.vue'
 import CombatTracker from './combatTracker.vue'
 import CharacterStatBlock from './CharacterStatBlock.vue'
 import ItemDetails from './ItemDetails.vue'
+import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage' // <-- AGGIUNGI QUESTO IMPORTO
+
+const firebaseStorage = getStorage() // <-- AGGIUNGI QUESTA INIZIALIZZAZIONE
 
 // --- SETUP DEGLI STORE E ROUTER ---
 const router = useRouter()
@@ -236,10 +239,11 @@ async function unshareItem(itemId, idSuffix = '') {
 }
 async function handleAdventureImageUpload(event, item, fieldName) {
   const file = event.target.files[0]
-  if (!file || !currentAdventure.value) return
+  if (!file || !currentAdventure.value) return // Assicurati che currentAdventure.value esista
   toast.info('Caricamento...')
   try {
-    const path = `adventures/${currentAdventure.value.id}/${item.id}`
+    // Utilizza l'ID dell'avventura per creare un percorso unico e organizzato in Storage
+    const path = `adventures/${currentAdventure.value.id}/${item.id}/${file.name}` // Puoi migliorare il path
     const downloadURL = await uploadImage(file, path)
     item[fieldName] = downloadURL
     toast.success('Immagine caricata!')
@@ -399,6 +403,7 @@ function addChapter() {
   if (!currentAdventure.value.chapters) {
     currentAdventure.value.chapters = []
   }
+
   const newChapter = {
     id: Date.now().toString(),
     title: `Nuovo Capitolo ${currentAdventure.value.chapters.length + 1}`,
@@ -406,6 +411,58 @@ function addChapter() {
     shareContent: '',
   }
   currentAdventure.value.chapters.push(newChapter)
+}
+function removeChapter(chapterId) {
+  if (!currentAdventure.value) return
+  if (confirm("Sei sicuro di voler eliminare questo capitolo? L'azione è irreversibile.")) {
+    currentAdventure.value.chapters = currentAdventure.value.chapters.filter(
+      (chap) => chap.id !== chapterId,
+    )
+    toast.success('Capitolo eliminato.')
+  }
+}
+// --- NUOVE FUNZIONI PER GESTIONE IMMAGINI ---
+
+// Funzione per cancellare l'immagine (o il suo URL)
+async function removeImage(item, fieldName) {
+  if (!currentAdventure.value || !item || !item[fieldName]) return
+
+  if (confirm('Sei sicuro di voler eliminare questa immagine?')) {
+    const imageUrl = item[fieldName]
+    const isFirebaseImage = imageUrl.includes('firebasestorage.googleapis.com')
+
+    if (isFirebaseImage) {
+      // Tentativo di cancellare l'immagine da Firebase Storage
+      try {
+        // Estrai il percorso del file dall'URL
+        const pathRegex = /adventures%2F(.*?)\?/
+        const match = imageUrl.match(pathRegex)
+        if (match && match[1]) {
+          const filePath = decodeURIComponent(match[1]) // Decodifica l'URL
+          const imageRef = storageRef(firebaseStorage, filePath) // Usa firebaseStorage importato
+          await deleteObject(imageRef)
+          toast.success('Immagine eliminata da Storage.')
+        } else {
+          console.warn('Impossibile estrarre il percorso da Firebase Storage URL:', imageUrl)
+          toast.info("Immagine rimossa dall'avventura, ma non da Storage (percorso non valido).")
+        }
+      } catch (error) {
+        console.error("Errore durante l'eliminazione da Firebase Storage:", error)
+        toast.error("Errore durante l'eliminazione dell'immagine da Storage.")
+      }
+    } else {
+      // Se è un URL esterno, semplicemente lo rimuoviamo
+      toast.info("URL immagine rimosso dall'avventura.")
+    }
+
+    item[fieldName] = '' // Rimuovi l'URL dall'oggetto dell'avventura
+  }
+}
+
+// Funzione per impostare l'immagine da URL
+function setImageFromUrl(item, fieldName, event) {
+  item[fieldName] = event.target.value
+  toast.success('URL immagine salvato!')
 }
 </script>
 
@@ -494,31 +551,32 @@ function addChapter() {
                       class="monster-editor-image"
                       alt="Anteprima"
                     />
-                    <label :for="'monster-upload-' + item.id" class="upload-btn"
-                      >Carica Immagine</label
-                    >
-                    <input
-                      :id="'monster-upload-' + item.id"
-                      type="file"
-                      @change="handleAdventureImageUpload($event, item, 'image_url')"
-                      accept="image/*"
-                      style="display: none"
-                    />
 
-                    <div class="share-controls">
-                      <button
-                        v-if="item.image_url && !sharedItemIds.has(item.id + '_img')"
-                        @click="shareItem(item, 'immagine', 'image_url', '_img')"
-                        class="share-btn"
+                    <div class="image-control-group">
+                      <label :for="'monster-upload-' + item.id" class="upload-btn"
+                        >Carica da PC</label
                       >
-                        Condividi Immagine
-                      </button>
+                      <input
+                        :id="'monster-upload-' + item.id"
+                        type="file"
+                        @change="handleAdventureImageUpload($event, item, 'image_url')"
+                        accept="image/*"
+                        hidden
+                      />
+                      <span class="or-divider">o</span>
+                      <input
+                        type="text"
+                        v-model="item.image_url"
+                        placeholder="Incolla URL esterno..."
+                        class="url-input"
+                      />
                       <button
-                        v-else-if="item.image_url"
-                        @click="unshareItem(item.id, '_img')"
-                        class="unshare-btn"
+                        v-if="item.image_url"
+                        @click="removeImage(item, 'image_url')"
+                        class="btn-remove-image"
+                        title="Rimuovi immagine"
                       >
-                        Nascondi Immagine
+                        &times;
                       </button>
                     </div>
                   </div>
@@ -666,14 +724,15 @@ function addChapter() {
                       @click="shareItem(item, 'ambiente', 'shareNotes')"
                       class="share-btn"
                     >
-                      Condividi
+                      Condividi Testo
                     </button>
                     <button v-else @click="unshareItem(item.id)" class="unshare-btn">
-                      Nascondi
+                      Nascondi Testo
                     </button>
                   </div>
                   <label>Note per il DM:</label>
                   <textarea v-model="item.dmNotes" class="text-editor dm-view" rows="2"></textarea>
+
                   <label>Immagine</label>
                   <img
                     v-if="item.imageUrl"
@@ -681,15 +740,32 @@ function addChapter() {
                     alt="Immagine dell'oggetto"
                     class="item-image"
                   />
-                  <label :for="'item-upload-' + item.id" class="upload-btn">Carica Immagine</label>
-                  <input
-                    :id="'item-upload-' + item.id"
-                    type="file"
-                    @change="handleAdventureImageUpload($event, item, 'imageUrl')"
-                    accept="image/*"
-                    style="display: none"
-                  />
 
+                  <div class="image-control-group">
+                    <label :for="'item-upload-' + item.id" class="upload-btn">Carica da PC</label>
+                    <input
+                      :id="'item-upload-' + item.id"
+                      type="file"
+                      @change="handleAdventureImageUpload($event, item, 'imageUrl')"
+                      accept="image/*"
+                      hidden
+                    />
+                    <span class="or-divider">o</span>
+                    <input
+                      type="text"
+                      v-model="item.imageUrl"
+                      placeholder="Incolla URL esterno..."
+                      class="url-input"
+                    />
+                    <button
+                      v-if="item.imageUrl"
+                      @click="removeImage(item, 'imageUrl')"
+                      class="btn-remove-image"
+                      title="Rimuovi immagine"
+                    >
+                      &times;
+                    </button>
+                  </div>
                   <div class="share-controls">
                     <button
                       v-if="item.imageUrl && !sharedItemIds.has(item.id + '_img')"
@@ -763,10 +839,24 @@ function addChapter() {
           class="adventure-block box"
         >
           <div class="section-header" @click="toggleChapter(chapter.id)">
-            <h3>
-              Capitolo:
-              <input type="text" @click.stop v-model="chapter.title" class="chapter-title-input" />
-            </h3>
+            <div class="chapter-title-wrapper">
+              <h3>
+                Capitolo:
+                <input
+                  type="text"
+                  @click.stop
+                  v-model="chapter.title"
+                  class="chapter-title-input"
+                />
+              </h3>
+              <button
+                @click.stop="removeChapter(chapter.id)"
+                class="remove-chapter-btn"
+                title="Elimina Capitolo"
+              >
+                ×
+              </button>
+            </div>
             <span class="toggle-icon">{{ expandedChapterId === chapter.id ? '▼' : '▶' }}</span>
           </div>
           <div v-if="expandedChapterId === chapter.id" class="section-content">
@@ -1435,6 +1525,165 @@ function addChapter() {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.chapter-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-grow: 1;
+}
+
+.remove-chapter-btn {
+  background-color: #c0392b;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 1.2em;
+  line-height: 24px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+/* Stili per la gestione delle immagini */
+.image-upload-controls {
+  margin-top: 10px;
+  border: 1px dashed #ccc;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  background-color: #f9f9f9;
+}
+
+.uploaded-image-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.current-image-preview {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: contain;
+  border: 1px solid #ddd;
+  background-color: #fff;
+}
+
+.image-actions {
+  display: flex;
+  flex-wrap: wrap; /* Permette il wrap su schermi piccoli */
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+}
+
+.input-image-url {
+  flex-grow: 1; /* Permette all'input di espandersi */
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 0.9em;
+  min-width: 150px; /* Larghezza minima */
+}
+
+.no-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.or-divider {
+  font-style: italic;
+  color: #777;
+  margin: 5px 0;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+.image-input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 5px;
+}
+.url-input {
+  flex-grow: 1;
+}
+.or-divider {
+  font-style: italic;
+  color: #555;
+}
+/* Container per i controlli di caricamento/URL/rimozione immagine */
+.image-control-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap; /* Permette ai controlli di andare a capo su schermi piccoli */
+}
+
+/* Stile per l'input URL */
+.url-input {
+  flex-grow: 1; /* Permette all'input di espandersi il più possibile */
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 0.9em;
+  min-width: 150px; /* Larghezza minima per l'input */
+}
+
+/* Divisore "o" */
+.or-divider {
+  font-style: italic;
+  color: #555;
+  flex-shrink: 0; /* Impedisce che si rimpicciolisca troppo */
+}
+
+/* Pulsante per rimuovere l'immagine */
+.btn-remove-image {
+  background-color: #e74c3c; /* Rosso */
+  color: white;
+  border: none;
+  border-radius: 50%; /* Tondo */
+  width: 28px;
+  height: 28px;
+  font-size: 1.2em;
+  line-height: 1; /* Centra la X */
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0; /* Impedisce che si rimpicciolisca */
+  display: flex; /* Centra la X con flexbox */
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.btn-remove-image:hover {
+  background-color: #c0392b; /* Rosso più scuro al hover */
+}
+
+/* Stile specifico per il contenitore del ritratto del personaggio */
+.character-portrait-controls {
+  text-align: center;
+}
+
+.character-portrait-controls .image-control-group {
+  justify-content: center; /* Centra i controlli sotto il ritratto */
 }
 </style>
 
