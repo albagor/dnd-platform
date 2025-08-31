@@ -19,7 +19,7 @@ onMounted(async () => {
     const querySnapshot = await getDocs(q)
     players.value = querySnapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data(),
+      email: doc.data().email,
     }))
   } catch (error) {
     console.error('Errore nel caricare la lista dei giocatori:', error)
@@ -29,6 +29,7 @@ onMounted(async () => {
 })
 
 function openPlayerSheet(playerId) {
+  console.log('Apro la scheda per ID:', playerId)
   router.push({ path: '/', query: { charId: playerId } })
 }
 

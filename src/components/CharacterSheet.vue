@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, onBeforeRouteUpdate } from 'vue-router'
 import { dndClasses, dndRaces, dndHitDice } from '../data/dndData.js'
 import { dndDefensiveItems } from '@/data/dndDefensiveItems.js'
@@ -17,9 +17,9 @@ import FeaturesAndTraits from './FeaturesAndTraits.vue'
 import InventorySection from './InventorySection.vue'
 import Grimoire from './Grimoire.vue'
 import { auth, db } from '@/firebaseConfig'
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore' // Aggiunto onSnapshot
+import { doc, setDoc, onSnapshot } from 'firebase/firestore'
 import { useToast } from 'vue-toastification'
-import { uploadImage } from '@/services/storageService.js' // <-- Aggiungi questo import
+import { uploadImage } from '@/services/storageService.js'
 import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage'
 
 const firebaseStorage = getStorage()
@@ -33,16 +33,14 @@ const savingThrowOrder = [
   'charisma',
 ]
 
-const route = useRoute() // Permette di leggere l'URL
+const route = useRoute()
 const toast = useToast()
-const isInitialLoad = ref(true)
-let characterListener = null // Variabile per l'ascoltatore in tempo reale
+let characterListener = null
 
-// STATO DEL COMPONENTE
 const isAnagraficaOpen = ref(true)
 const isStatsOpen = ref(true)
 const isCombatOpen = ref(true)
-const isResourcesOpen = ref(true) // <-- Variabile che mancava
+const isResourcesOpen = ref(true)
 const isSkillsOpen = ref(true)
 const isFeaturesOpen = ref(true)
 const isInventoryOpen = ref(true)
@@ -255,6 +253,56 @@ const defaultCharacter = {
 }
 const character = ref(JSON.parse(JSON.stringify(defaultCharacter)))
 
+// ------ SOLO GESTIONE REALTIME! ------
+
+function setupCharacterListener(userId) {
+  targetUserId = userId // <--- AGGIUNGI QUESTO!
+  if (characterListener) characterListener()
+  const docRef = doc(db, 'characterSheets', userId)
+  characterListener = onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      character.value = { ...docSnap.data(), id: userId } // <--- sempre id giusto!
+    } else {
+      character.value = { ...JSON.parse(JSON.stringify(defaultCharacter)), id: userId }
+    }
+  })
+}
+
+onMounted(() => {
+  const targetUserId = route.query.charId || auth.currentUser?.uid
+  if (targetUserId) {
+    setupCharacterListener(targetUserId)
+  }
+})
+onBeforeRouteUpdate((to, from) => {
+  const newTargetId = to.query.charId || auth.currentUser?.uid
+  const oldTargetId = from.query.charId || auth.currentUser?.uid
+  if (newTargetId && newTargetId !== oldTargetId) {
+    setupCharacterListener(newTargetId)
+  }
+})
+onUnmounted(() => {
+  if (characterListener) characterListener() // Interrompe l'ascolto quando si lascia la pagina
+})
+// --- SOLO UN WATCHER DI SALVATAGGIO, SEMPRE SU character.value.id (che è il player in ascolto) ---
+let debounceTimer = null
+watch(
+  character,
+  (newData) => {
+    if (!targetUserId) return
+    clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(async () => {
+      const docRef = doc(db, 'characterSheets', targetUserId) // <--- usa targetUserId!
+      try {
+        await setDoc(docRef, JSON.parse(JSON.stringify(newData)))
+      } catch (error) {
+        toast.error('Errore nel salvataggio della scheda.')
+      }
+    }, 1500)
+  },
+  { deep: true },
+)
+
 // --- INIZIO BLOCCO LOGICA MODIFICATO ---
 
 // Funzione helper per caricare i dati
@@ -271,114 +319,14 @@ async function loadCharacterSheet(userId) {
     character.value = JSON.parse(JSON.stringify(defaultCharacter))
     toast.info('Nessuna scheda trovata per questo giocatore. Mostrata scheda vuota.')
   }
-  nextTick(() => {
-    isInitialLoad.value = false
-  })
 }
-
-// Logica che decide QUALE scheda caricare
-onMounted(() => {
-  watch(
-    () => auth.currentUser,
-    (user) => {
-      if (user) {
-        const targetUserId = route.query.charId
-        if (targetUserId) {
-          loadCharacterSheet(targetUserId)
-        } else {
-          loadCharacterSheet(user.uid)
-        }
-      }
-    },
-    { immediate: true },
-  )
-})
-
-// Logica che decide DOVE salvare i dati
-watch(
-  character,
-  async (newData) => {
-    if (isInitialLoad.value) return
-
-    let targetUserId = route.query.charId
-    if (!targetUserId) {
-      if (auth.currentUser) {
-        targetUserId = auth.currentUser.uid
-      } else {
-        return // Non salvare se non c'è un utente loggato
-      }
-    }
-
-    if (targetUserId) {
-      const docRef = doc(db, 'characterSheets', targetUserId)
-      try {
-        await setDoc(docRef, JSON.parse(JSON.stringify(newData)))
-      } catch (error) {
-        console.error('Errore durante il salvataggio:', error)
-        toast.error('Errore nel salvataggio della scheda.')
-      }
-    }
-  },
-  { deep: true },
-)
 
 // --- FINE BLOCCO LOGICA MODIFICATO ---
 // LOGICA FIREBASE
-onMounted(async () => {
-  if (auth.currentUser) {
-    const userId = auth.currentUser.uid
-    const docRef = doc(db, 'characterSheets', userId)
-    const docSnap = await getDoc(docRef)
-    if (docSnap.exists()) {
-      const loadedData = docSnap.data()
-      const mergedCharacter = {
-        ...defaultCharacter,
-        ...loadedData,
-        header: { ...defaultCharacter.header, ...loadedData.header },
-        abilityScores: { ...defaultCharacter.abilityScores, ...loadedData.abilityScores },
-        combat: { ...defaultCharacter.combat, ...loadedData.combat },
-        classResources: { ...defaultCharacter.classResources, ...loadedData.classResources },
-        equipment: { ...defaultCharacter.equipment, ...loadedData.equipment },
-        spellcasting: { ...defaultCharacter.spellcasting, ...loadedData.spellcasting },
-      }
-      character.value = mergedCharacter
-      toast.success('Scheda personaggio caricata!')
-    } else {
-      toast.info('Benvenuto! Compila la tua scheda, verrà salvata automaticamente.')
-    }
-    nextTick(() => {
-      isInitialLoad.value = false
-    })
-  }
-})
-
-watch(
-  character,
-  async (newData) => {
-    if (auth.currentUser) {
-      const userId = auth.currentUser.uid
-      const docRef = doc(db, 'characterSheets', userId)
-      try {
-        await setDoc(docRef, JSON.parse(JSON.stringify(newData)))
-      } catch (error) {
-        console.error('Errore durante il salvataggio automatico:', error)
-        toast.error('Errore nel salvataggio della scheda.')
-      }
-    }
-  },
-  { deep: true },
-)
-
-watch(
-  () => character.value.header.race,
-  (newRace, oldRace) => {
-    if (!isInitialLoad.value && newRace !== oldRace) {
-      character.value.header.subrace = ''
-    }
-  },
-)
 
 // FUNZIONI E COMPUTED PER RISORSE DI CLASSE
+let targetUserId = null
+
 const getClassLevel = (className) => {
   const charClass = character.value.header.classes.find((c) => c.name === className)
   return charClass ? Number(charClass.level) || 0 : 0
@@ -858,65 +806,8 @@ async function removeImage(fieldName) {
   }
 }
 // Funzione per caricare E ASCOLTARE la scheda
-function setupCharacterListener(userId) {
-  if (characterListener) characterListener() // Interrompe l'ascolto precedente
-
-  const docRef = doc(db, 'characterSheets', userId)
-  characterListener = onSnapshot(
-    docRef,
-    (docSnap) => {
-      if (docSnap.exists()) {
-        character.value = { id: docSnap.id, ...docSnap.data() }
-      } else {
-        // Se non esiste, mostra una scheda vuota
-        character.value = JSON.parse(JSON.stringify(defaultCharacter))
-      }
-    },
-    (error) => {
-      console.error("Errore nell'ascolto della scheda:", error)
-      toast.error('Errore di sincronizzazione della scheda.')
-    },
-  )
-}
-
-onMounted(() => {
-  const targetUserId = route.query.charId || auth.currentUser?.uid
-  if (targetUserId) {
-    setupCharacterListener(targetUserId)
-  }
-})
 
 // Gestisce il cambio di scheda (es. da un PG a un altro)
-onBeforeRouteUpdate((to, from) => {
-  const newTargetId = to.query.charId || auth.currentUser?.uid
-  if (newTargetId && newTargetId !== (from.query.charId || auth.currentUser?.uid)) {
-    setupCharacterListener(newTargetId)
-  }
-})
-
-onUnmounted(() => {
-  if (characterListener) characterListener() // Interrompe l'ascolto quando si lascia la pagina
-})
-
-// Watcher per il salvataggio (ora più semplice)
-let debounceTimer = null
-watch(
-  character,
-  (newData) => {
-    if (!newData || !newData.id) return
-
-    clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(async () => {
-      const docRef = doc(db, 'characterSheets', newData.id)
-      try {
-        await setDoc(docRef, JSON.parse(JSON.stringify(newData)))
-      } catch (error) {
-        toast.error('Errore nel salvataggio della scheda.')
-      }
-    }, 1500)
-  },
-  { deep: true },
-)
 </script>
 
 <template>
