@@ -49,7 +49,9 @@ const handleLogout = async () => {
     <div id="app-layout">
       <header>
         <nav>
-          <RouterLink to="/">Scheda Personaggio</RouterLink>
+          <RouterLink v-if="userStore.isDM" to="/dashboard">Cruscotto PG</RouterLink>
+          <RouterLink v-else to="/">Scheda Personaggio</RouterLink>
+
           <RouterLink to="/dadi">Lancia-Dadi</RouterLink>
           <RouterLink to="/diario">Diario</RouterLink>
 
@@ -58,7 +60,15 @@ const handleLogout = async () => {
             <RouterLink to="/generatore-ia">Generatore IA</RouterLink>
             <RouterLink to="/compendio">Compendio DM</RouterLink>
           </template>
-          <RouterLink v-else to="/lobby">Sessione</RouterLink>
+
+          <template v-else>
+            <RouterLink
+              v-if="sessionStore.joinedAdventureId"
+              :to="`/sessione/${sessionStore.joinedAdventureId}`"
+              >Sessione Attiva</RouterLink
+            >
+            <RouterLink v-else to="/lobby">Unisciti a Sessione</RouterLink>
+          </template>
 
           <a @click="handleLogout" class="logout-btn">Logout</a>
         </nav>
