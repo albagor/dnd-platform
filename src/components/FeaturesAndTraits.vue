@@ -16,6 +16,22 @@ const isModalOpen = ref(false)
 const modalType = ref('trait') // 'trait', 'feature', 'armor', 'weapon', 'tool', 'language', 'other'
 const newEntry = ref({})
 
+function removeCustomEntry(list, entry) {
+  const index = list.indexOf(entry)
+  if (index > -1) {
+    list.splice(index, 1)
+  }
+}
+
+function removeProficiency(listName, entry) {
+  const list = character.value.proficiencies[listName]
+  if (list) {
+    const index = list.indexOf(entry)
+    if (index > -1) {
+      list.splice(index, 1)
+    }
+  }
+}
 function openModal(type) {
   modalType.value = type
   if (type === 'trait' || type === 'feature') {
@@ -115,41 +131,112 @@ const modalTitle = computed(() => {
             <h4>Competenze Armature</h4>
             <button @click="openModal('armor')" class="add-btn-small">+</button>
           </div>
-          <p class="prof-list">{{ armorProficiencies.join(', ') || 'Nessuna' }}</p>
+          <div class="prof-list-container">
+            <span v-for="prof in armorProficiencies" :key="prof" class="prof-item">
+              {{ prof }}
+              <button
+                v-if="character.proficiencies.manualArmor.includes(prof)"
+                @click="removeProficiency('manualArmor', prof)"
+                class="remove-entry-btn"
+              >
+                ×
+              </button>
+            </span>
+            <span v-if="!armorProficiencies.length" class="placeholder">Nessuna</span>
+          </div>
         </div>
         <div class="sub-section">
           <div class="column-header">
             <h4>Competenze Armi</h4>
             <button @click="openModal('weapon')" class="add-btn-small">+</button>
           </div>
-          <p class="prof-list">{{ weaponProficiencies.join(', ') || 'Nessuna' }}</p>
+          <div class="prof-list-container">
+            <span v-for="prof in weaponProficiencies" :key="prof" class="prof-item">
+              {{ prof }}
+              <button
+                v-if="character.proficiencies.manualWeapons.includes(prof)"
+                @click="removeProficiency('manualWeapon', prof)"
+                class="remove-entry-btn"
+              >
+                ×
+              </button>
+            </span>
+            <span v-if="!weaponProficiencies.length" class="placeholder">Nessuna</span>
+          </div>
         </div>
         <div class="sub-section">
           <div class="column-header">
             <h4>Competenze Strumenti</h4>
             <button @click="openModal('tool')" class="add-btn-small">+</button>
           </div>
-          <p class="prof-list">
-            {{ (character.proficiencies.manualTools || []).join(', ') || 'Nessuna' }}
-          </p>
+          <div class="prof-list-container">
+            <span v-for="tool in character.proficiencies.manualTools" :key="tool" class="prof-item">
+              {{ tool }}
+              <button @click="removeProficiency('manualTools', tool)" class="remove-entry-btn">
+                ×
+              </button>
+            </span>
+            <span
+              v-if="
+                !character.proficiencies.manualTools ||
+                character.proficiencies.manualTools.length === 0
+              "
+              class="placeholder"
+              >Nessuna</span
+            >
+          </div>
         </div>
         <div class="sub-section">
           <div class="column-header">
             <h4>Linguaggi</h4>
             <button @click="openModal('language')" class="add-btn-small">+</button>
           </div>
-          <p class="prof-list">
-            {{ (character.proficiencies.manualLanguages || []).join(', ') || 'Nessuno' }}
-          </p>
+          <div class="prof-list-container">
+            <span
+              v-for="lang in character.proficiencies.manualLanguages"
+              :key="lang"
+              class="prof-item"
+            >
+              {{ lang }}
+              <button @click="removeProficiency('manualLanguages', lang)" class="remove-entry-btn">
+                ×
+              </button>
+            </span>
+            <span
+              v-if="
+                !character.proficiencies.manualLanguages ||
+                character.proficiencies.manualLanguages.length === 0
+              "
+              class="placeholder"
+              >Nessuno</span
+            >
+          </div>
         </div>
         <div class="sub-section">
           <div class="column-header">
             <h4>Altre competenze</h4>
             <button @click="openModal('other')" class="add-btn-small">+</button>
           </div>
-          <p class="prof-list">
-            {{ (character.proficiencies.manualOther || []).join(', ') || 'Nessuna' }}
-          </p>
+          <div class="prof-list-container">
+            <span
+              v-for="other in character.proficiencies.manualOther"
+              :key="other"
+              class="prof-item"
+            >
+              {{ other }}
+              <button @click="removeProficiency('manualOther', other)" class="remove-entry-btn">
+                ×
+              </button>
+            </span>
+            <span
+              v-if="
+                !character.proficiencies.manualOther ||
+                character.proficiencies.manualOther.length === 0
+              "
+              class="placeholder"
+              >Nessuna</span
+            >
+          </div>
         </div>
       </div>
 
@@ -161,7 +248,16 @@ const modalTitle = computed(() => {
           </div>
           <ul class="feature-list">
             <li v-for="trait in racialTraits" :key="trait.name">
-              <strong>{{ trait.name }}:</strong> {{ trait.description }}
+              <div class="feature-content">
+                <strong>{{ trait.name }}:</strong> {{ trait.description }}
+              </div>
+              <button
+                v-if="character.customRacialTraits.includes(trait)"
+                @click="removeCustomEntry(character.customRacialTraits, trait)"
+                class="remove-entry-btn"
+              >
+                ×
+              </button>
             </li>
             <li v-if="!racialTraits.length" class="placeholder">Nessun tratto razziale.</li>
           </ul>
@@ -177,24 +273,37 @@ const modalTitle = computed(() => {
           <ul class="feature-list">
             <li v-for="feature in baseClassFeatures" :key="feature.name">
               <strong>{{ feature.name }}:</strong> {{ feature.description }}
-              <div
-                v-if="feature.name === 'Stile di Combattimento' && dndFeatureChoices[feature.name]"
-                class="choice-box"
-              >
-                <select v-model="character.combat.fightingStyles[0]">
-                  <option :value="undefined" disabled>-- Scegli uno stile --</option>
-                  <option
-                    v-for="style in dndFeatureChoices['Stile di Combattimento'].options"
-                    :key="style.name"
-                    :value="style.name"
-                  >
-                    {{ style.name }}
-                  </option>
-                </select>
-              </div>
             </li>
-            <li v-if="!baseClassFeatures.length" class="placeholder">
-              Nessun privilegio di classe base.
+            <li v-for="feature in subclassFeatures" :key="feature.name">
+              <strong>{{ feature.name }} ({{ feature.subclassName }}):</strong>
+              {{ feature.description }}
+            </li>
+
+            <li
+              v-for="feature in character.customClassFeatures"
+              :key="feature.name"
+              class="custom-feature"
+            >
+              <div class="feature-content">
+                <strong>{{ feature.name }} (Manuale):</strong> {{ feature.description }}
+              </div>
+              <button
+                @click="removeCustomEntry(character.customClassFeatures, feature)"
+                class="remove-entry-btn"
+              >
+                ×
+              </button>
+            </li>
+
+            <li
+              v-if="
+                !baseClassFeatures.length &&
+                !subclassFeatures.length &&
+                (!character.customClassFeatures || character.customClassFeatures.length === 0)
+              "
+              class="placeholder"
+            >
+              Nessun privilegio di classe.
             </li>
           </ul>
         </div>
@@ -389,5 +498,49 @@ h4 {
     grid-template-columns: 1fr; /* Le 3 colonne diventano 1 */
     gap: 1.5rem; /* Riduciamo lo spazio tra le sezioni */
   }
+}
+.custom-feature {
+  background-color: #f0f8ff; /* Un leggero sfondo azzurro */
+  border-left: 3px solid #87ceeb; /* Una barra laterale per evidenziare */
+  padding-left: 10px;
+}
+.prof-list-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.prof-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.feature-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.feature-content {
+  flex-grow: 1;
+}
+.remove-entry-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.9em;
+  line-height: 18px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
