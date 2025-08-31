@@ -38,6 +38,8 @@ const toast = useToast()
 
 // --- STATO DEL COMPONENTE ---
 const currentAdventure = ref(null)
+const isLoadingAdventure = ref(false)
+let adventureUnsubscribe = null; // Per l'ascoltatore principale
 const sharedItemIds = ref(new Set())
 const playersInAdventure = ref([])
 const activeSession = ref(null)
@@ -86,7 +88,14 @@ onMounted(() => {
 // --- LOGICA CORE (CARICAMENTO E SALVATAGGIO) ---
 async function loadAdventure(adventureId) {
   setActiveAdventure(adventureId)
+
+    isLoadingAdventure.value = true;
+
   activeAdventureId.value = adventureId
+
+    if (adventureUnsubscribe) adventureUnsubscribe(); // Termina l'ascolto precedente
+
+
   if (sharedContentListener) sharedContentListener()
   if (playersListener) playersListener()
   const docRef = doc(db, 'adventures', adventureId)
@@ -118,22 +127,22 @@ let debounceTimer = null
 watch(
   currentAdventure,
   (modifiedData) => {
-    if (modifiedData && activeAdventureId.value) {
-      clearTimeout(debounceTimer)
-      debounceTimer = setTimeout(async () => {
-        try {
-          const docRef = doc(db, 'adventures', activeAdventureId.value)
-          const { id, ...dataToSave } = modifiedData
-          await setDoc(docRef, dataToSave)
-          toast.success('Modifiche salvate!', { timeout: 1500 })
-        } catch (error) {
-          toast.error('Errore durante il salvataggio.')
-        }
-      }, 2000)
-    }
-  },
-  { deep: true },
-)
+  // Salva solo se c'è un'avventura attiva e non siamo in fase di caricamento iniziale
+  if (modifiedData && activeAdventureId.value && !isLoadingAdventure.value && oldData) {
+    clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(async () => {
+      try {
+        const docRef = doc(db, 'adventures', activeAdventureId.value)
+        const { id, ...dataToSave } = modifiedData
+        await setDoc(docRef, dataToSave)
+        toast.success('Modifiche salvate!', { timeout: 1500 })
+      } catch (error) {
+        console.error("Errore salvataggio:", error)
+        toast.error('Errore durante il salvataggio.')
+      }
+    }, 2000)
+  }
+}, { deep: true });
 
 // --- FUNZIONI PER LINK DINAMICI ---
 const allPreparedItems = computed(() => {

@@ -165,17 +165,57 @@ function showDescription(item) {
       v-if="isCustomItemModalOpen"
       class="modal-overlay"
       @click.self="isCustomItemModalOpen = false"
-    ></div>
+    >
+      <div class="modal-content">
+        <h3>Aggiungi Oggetto Manuale</h3>
+        <div class="form-item">
+          <label>Nome Oggetto</label>
+          <input type="text" v-model="newCustomItem.name" placeholder="Es. Corda (15m)" />
+        </div>
+        <div class="form-item">
+          <label>Quantità</label>
+          <input type="number" v-model.number="newCustomItem.quantity" min="1" />
+        </div>
+        <div class="form-item">
+          <label>Peso (kg)</label>
+          <input type="number" v-model.number="newCustomItem.weight" min="0" />
+        </div>
+        <div class="form-item">
+          <label>Descrizione</label>
+          <textarea
+            v-model="newCustomItem.description"
+            rows="4"
+            placeholder="Descrizione dell'oggetto..."
+          ></textarea>
+        </div>
+        <div class="modal-actions">
+          <button @click="isCustomItemModalOpen = false" class="btn-secondary">Annulla</button>
+          <button @click="addCustomItem" class="btn-primary">Aggiungi</button>
+        </div>
+      </div>
+    </div>
+
     <div
       v-if="isDescriptionModalOpen"
       class="modal-overlay"
       @click.self="isDescriptionModalOpen = false"
-    ></div>
+    >
+      <div class="modal-content">
+        <h3 class="description-title">{{ selectedItemForDescription?.name }}</h3>
+        <p class="description-text">{{ selectedItemForDescription?.description }}</p>
+        <div class="modal-actions">
+          <button @click="isDescriptionModalOpen = false" class="btn-secondary">Chiudi</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* ...TUTTO IL TUO STILE ESISTENTE... */
+.inventory-section {
+  position: relative; /* Crea un contesto per lo z-index */
+  z-index: 1; /* Assicura che sia sopra altri elementi base */
+}
 .treasure-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -197,7 +237,7 @@ function showDescription(item) {
   text-align: center;
   padding: 4px;
 }
-.inventory-section {
+.equipment-section {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -288,12 +328,57 @@ function showDescription(item) {
   border-radius: 4px;
   cursor: pointer;
 }
-.modal-content .description-title {
+
+/* REGOLE COMPLETE PER LA FINESTRA MODALE */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  background-color: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 500px;
+  color: #000;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.btn-primary {
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.btn-secondary {
+  background-color: #bdc3c7;
+  color: #2c3e50;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.description-title {
   border-bottom: 1px solid #ddd;
   padding-bottom: 10px;
   margin-bottom: 10px;
 }
-.modal-content .description-text {
+.description-text {
   white-space: pre-wrap;
   background-color: #f8f9fa;
   padding: 10px;
@@ -308,10 +393,9 @@ function showDescription(item) {
     grid-template-columns: 1fr;
     flex-wrap: wrap;
   }
-  /* RITOCCO AGGIUNTO QUI */
   .add-item-section select {
-    flex-basis: 100%; /* Forza la tendina ad andare a capo */
-    margin-bottom: 5px; /* Aggiunge un po' di spazio sotto */
+    flex-basis: 100%;
+    margin-bottom: 5px;
   }
   .inventory-header {
     display: none;

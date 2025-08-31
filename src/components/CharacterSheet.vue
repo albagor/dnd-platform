@@ -24,6 +24,14 @@ import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage'
 
 const firebaseStorage = getStorage()
 const abilityOrder = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma']
+const savingThrowOrder = [
+  'strength',
+  'dexterity',
+  'constitution',
+  'intelligence',
+  'wisdom',
+  'charisma',
+]
 
 const route = useRoute() // Permette di leggere l'URL
 const toast = useToast()
@@ -112,6 +120,18 @@ const abilityAbbreviations = {
   wisdom: 'Sag',
   charisma: 'Car',
 }
+const sortedSkills = computed(() => {
+  if (!character.value || !character.value.skills) return []
+  const skillKeys = Object.keys(character.value.skills)
+
+  // Ordina le chiavi inglesi (a, b) basandosi sulla loro traduzione italiana
+  return skillKeys.sort((a, b) => {
+    const translationA = translations[a] || a
+    const translationB = translations[b] || b
+    // localeCompare è il metodo corretto per ordinare alfabeticamente in una lingua specifica
+    return translationA.localeCompare(translationB, 'it')
+  })
+})
 
 const { makeCheck } = useDiceRoller()
 
@@ -198,7 +218,13 @@ const defaultCharacter = {
     wildShapeUses: { used: 0 },
     superiorityDice: { current: 0 },
   },
-  proficiencies: { manualArmor: [], manualWeapons: [], manualTools: [], manualLanguages: [] },
+  proficiencies: {
+    manualArmor: [],
+    manualWeapons: [],
+    manualTools: [],
+    manualLanguages: [],
+    manualOther: [], // <-- AGGIUNGI QUESTA RIGA
+  },
   personality: { traits: '', ideals: '', bonds: '', flaws: '' },
   features: [],
   equipment: {
@@ -1103,8 +1129,8 @@ watch(
         <div class="saving-throws">
           <label class="block-label">Tiri Salvezza</label>
           <ul>
-            <li v-for="(save, key) in character.savingThrows" :key="key">
-              <input type="checkbox" v-model="save.proficient" />
+            <li v-for="key in savingThrowOrder" :key="key">
+              <input type="checkbox" v-model="character.savingThrows[key].proficient" />
               <button
                 class="bonus-display roll-button"
                 @click="makeCheck(`Tiro Salvezza: ${translations[key]}`, savingThrowModifiers[key])"
@@ -1337,14 +1363,15 @@ watch(
       </div>
       <div v-if="isSkillsOpen" class="section-content skills-section-grid">
         <ul class="skills-list">
-          <li v-for="(skill, key) in character.skills" :key="key">
-            <input type="checkbox" v-model="skill.proficient" />
+          <li v-for="key in sortedSkills" :key="key">
+            <input type="checkbox" v-model="character.skills[key].proficient" />
             <button
               class="bonus-display roll-button"
               @click="makeCheck(`Prova Abilità: ${translations[key]}`, skillModifiers[key])"
             >
               {{ skillModifiers[key] >= 0 ? '+' : '' }}{{ skillModifiers[key] }}
             </button>
+
             <label
               >{{ translations[key]
               }}<span class="ability-hint"
@@ -1838,15 +1865,6 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-/* CORREZIONE PER L'IMMAGINE */
-.character-image,
-.image-placeholder {
-  width: 100%;
-  height: 250px;
-  object-fit: cover;
-  border: 1px solid #ccc;
-  border-radius: 8px;
 }
 .stats-grid {
   display: grid;
@@ -2508,67 +2526,13 @@ textarea {
   font-size: 0.8em;
   cursor: pointer;
 }
-/* --- INIZIO REGOLE RESPONSIVE COMPLETE --- */
-@media (max-width: 768px) {
-  /* Regole generali per impilare le griglie principali */
-  .anagrafica-grid,
-  .appearance-section,
-  .appearance-grid,
-  .combat-grid,
-  .stats-grid,
-  .skills-section-grid,
-  .treasure-grid,
-  .companion-details-grid,
-  .companion-stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  /* Corregge il layout dei punteggi di caratteristica su 2 colonne */
-  .scores {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  /* Permette ai pulsanti di andare a capo */
-  .add-item-section {
-    flex-wrap: wrap;
-  }
-
-  /* Impila la sezione principale degli incantesimi */
-  .spell-main-stats {
-    grid-template-columns: 1fr 1fr; /* Mette CD e Bonus Attacco sulla stessa riga */
-    grid-template-areas:
-      'ability ability'
-      'dc attack'
-      'actions actions';
-  }
-  .spell-main-stats .spell-stat-box:nth-child(1) {
-    grid-area: ability;
-  }
-  .spell-main-stats .spell-stat-box:nth-child(2) {
-    grid-area: dc;
-  }
-  .spell-main-stats .spell-stat-box:nth-child(3) {
-    grid-area: attack;
-  }
-  .spell-main-stats .spell-actions {
-    grid-area: actions;
-    margin-top: 1rem;
-  }
-
-  /* Impila i livelli degli incantesimi */
-  .spell-slots-grid {
-    grid-template-columns: 1fr;
-  }
-}
-/* Container per i controlli di caricamento/URL/rimozione immagine */
 .image-control-group {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-top: 10px;
-  flex-wrap: wrap; /* Permette ai controlli di andare a capo su schermi piccoli */
+  flex-wrap: wrap;
 }
-
 .image-controls {
   display: flex;
   flex-wrap: wrap;
@@ -2577,7 +2541,7 @@ textarea {
 }
 .url-input {
   flex-grow: 1;
-  min-width: 80px; /* Evita che diventi troppo piccolo */
+  min-width: 80px;
 }
 .or-divider {
   font-style: italic;
@@ -2594,35 +2558,77 @@ textarea {
   cursor: pointer;
   flex-shrink: 0;
 }
-/* Pulsante per rimuovere l'immagine */
 .btn-remove-image {
-  background-color: #e74c3c; /* Rosso */
+  background-color: #e74c3c;
   color: white;
   border: none;
-  border-radius: 50%; /* Tondo */
+  border-radius: 50%;
   width: 28px;
   height: 28px;
   font-size: 1.2em;
-  line-height: 1; /* Centra la X */
+  line-height: 1;
   cursor: pointer;
   padding: 0;
-  flex-shrink: 0; /* Impedisce che si rimpicciolisca */
-  display: flex; /* Centra la X con flexbox */
+  flex-shrink: 0;
+  display: flex;
   justify-content: center;
   align-items: center;
   transition: background-color 0.2s;
 }
-
 .btn-remove-image:hover {
-  background-color: #c0392b; /* Rosso più scuro al hover */
+  background-color: #c0392b;
 }
-
-/* Stile specifico per il contenitore del ritratto del personaggio */
 .character-portrait-controls {
   text-align: center;
 }
-
 .character-portrait-controls .image-control-group {
-  justify-content: center; /* Centra i controlli sotto il ritratto */
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .anagrafica-grid,
+  .appearance-section,
+  .appearance-grid,
+  .combat-grid,
+  .stats-grid,
+  .skills-section-grid,
+  .treasure-grid,
+  .companion-details-grid,
+  .companion-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .scores {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .add-item-section {
+    flex-wrap: wrap;
+  }
+  .spell-main-stats {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 'ability ability' 'dc attack' 'actions actions';
+  }
+  .spell-main-stats .spell-stat-box:nth-child(1) {
+    grid-area: ability;
+  }
+  .spell-main-stats .spell-stat-box:nth-child(2) {
+    grid-area: dc;
+  }
+  .spell-main-stats .spell-stat-box:nth-child(3) {
+    grid-area: attack;
+  }
+  .spell-main-stats .spell-actions {
+    grid-area: actions;
+    margin-top: 1rem;
+  }
+  .spell-slots-grid {
+    grid-template-columns: 1fr;
+  }
+  .class-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .level-input {
+    width: 100%;
+  }
 }
 </style>

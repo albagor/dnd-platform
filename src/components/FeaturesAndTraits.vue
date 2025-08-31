@@ -13,7 +13,7 @@ defineProps({
 })
 
 const isModalOpen = ref(false)
-const modalType = ref('trait') // 'trait', 'feature', 'armor', 'weapon', 'tool', 'language'
+const modalType = ref('trait') // 'trait', 'feature', 'armor', 'weapon', 'tool', 'language', 'other'
 const newEntry = ref({})
 
 function openModal(type) {
@@ -29,24 +29,56 @@ function openModal(type) {
 function addEntry(character) {
   switch (modalType.value) {
     case 'trait':
+      // Controllo di sicurezza: se l'array non esiste, lo crea
+      if (!character.customRacialTraits) {
+        character.customRacialTraits = []
+      }
       if (newEntry.value.name && newEntry.value.description)
         character.customRacialTraits.push({ ...newEntry.value })
       break
+
     case 'feature':
+      // Controllo di sicurezza: se l'array non esiste, lo crea
+      if (!character.customClassFeatures) {
+        character.customClassFeatures = []
+      }
       if (newEntry.value.name && newEntry.value.description)
         character.customClassFeatures.push({ ...newEntry.value })
       break
+
     case 'armor':
-      if (newEntry.value.text) character.proficiencies.manualArmor.push(newEntry.value.text)
+      if (newEntry.value.text) {
+        if (!character.proficiencies.manualArmor) character.proficiencies.manualArmor = []
+        character.proficiencies.manualArmor.push(newEntry.value.text)
+      }
       break
+
     case 'weapon':
-      if (newEntry.value.text) character.proficiencies.manualWeapons.push(newEntry.value.text)
+      if (newEntry.value.text) {
+        if (!character.proficiencies.manualWeapons) character.proficiencies.manualWeapons = []
+        character.proficiencies.manualWeapons.push(newEntry.value.text)
+      }
       break
+
     case 'tool':
-      if (newEntry.value.text) character.proficiencies.manualTools.push(newEntry.value.text)
+      if (newEntry.value.text) {
+        if (!character.proficiencies.manualTools) character.proficiencies.manualTools = []
+        character.proficiencies.manualTools.push(newEntry.value.text)
+      }
       break
+
     case 'language':
-      if (newEntry.value.text) character.proficiencies.manualLanguages.push(newEntry.value.text)
+      if (newEntry.value.text) {
+        if (!character.proficiencies.manualLanguages) character.proficiencies.manualLanguages = []
+        character.proficiencies.manualLanguages.push(newEntry.value.text)
+      }
+      break
+
+    case 'other':
+      if (newEntry.value.text) {
+        if (!character.proficiencies.manualOther) character.proficiencies.manualOther = []
+        character.proficiencies.manualOther.push(newEntry.value.text)
+      }
       break
   }
   isModalOpen.value = false
@@ -66,6 +98,8 @@ const modalTitle = computed(() => {
       return 'Aggiungi Competenza Strumento'
     case 'language':
       return 'Aggiungi Linguaggio'
+    case 'other':
+      return 'Aggiungi altre competenze'
     default:
       return 'Aggiungi Voce'
   }
@@ -95,7 +129,9 @@ const modalTitle = computed(() => {
             <h4>Competenze Strumenti</h4>
             <button @click="openModal('tool')" class="add-btn-small">+</button>
           </div>
-          <p class="prof-list">{{ character.proficiencies.manualTools.join(', ') || 'Nessuna' }}</p>
+          <p class="prof-list">
+            {{ (character.proficiencies.manualTools || []).join(', ') || 'Nessuna' }}
+          </p>
         </div>
         <div class="sub-section">
           <div class="column-header">
@@ -103,7 +139,16 @@ const modalTitle = computed(() => {
             <button @click="openModal('language')" class="add-btn-small">+</button>
           </div>
           <p class="prof-list">
-            {{ character.proficiencies.manualLanguages.join(', ') || 'Nessuno' }}
+            {{ (character.proficiencies.manualLanguages || []).join(', ') || 'Nessuno' }}
+          </p>
+        </div>
+        <div class="sub-section">
+          <div class="column-header">
+            <h4>Altre competenze</h4>
+            <button @click="openModal('other')" class="add-btn-small">+</button>
+          </div>
+          <p class="prof-list">
+            {{ (character.proficiencies.manualOther || []).join(', ') || 'Nessuna' }}
           </p>
         </div>
       </div>
