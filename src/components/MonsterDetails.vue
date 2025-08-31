@@ -2,10 +2,7 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  monster: {
-    type: Object,
-    required: true,
-  },
+  monster: { type: Object, required: true },
 })
 
 defineEmits(['close'])
@@ -26,39 +23,60 @@ const abilityModifiers = computed(() => {
   return mods
 })
 
+// NUOVA COMPUTED per formattare le abilità
+const formattedSkills = computed(() => {
+  if (!props.monster || !props.monster.skills) return ''
+  // Converte l'oggetto { "Arcano": 7, "Furtività": 4 } in una stringa "Arcano +7, Furtività +4"
+  return Object.entries(props.monster.skills)
+    .map(([skill, bonus]) => `${skill} ${bonus >= 0 ? '+' : ''}${bonus}`)
+    .join(', ')
+})
+
 const formattedSpeed = computed(() => {
-  if (typeof props.monster.speed === 'string' && props.monster.speed) {
-    return props.monster.speed
-      .split(',')
-      .map((s) => s.trim())
-      .join(', ')
-  }
+  if (typeof props.monster.speed === 'string') return props.monster.speed
   return props.monster.speed || ''
 })
 
 const formattedHpDice = computed(() => {
-  if (props.monster.hp_dice) {
-    return `(${props.monster.hp_dice})`
-  }
+  if (props.monster.hp_dice) return `(${props.monster.hp_dice})`
   return ''
 })
 
 const formatOptionalArray = (value) => {
-  if (Array.isArray(value)) {
-    return value.join(', ')
-  }
+  if (Array.isArray(value)) return value.join(', ')
   return value || ''
 }
 
-const formatText = (textBlock) => {
-  if (!textBlock || typeof textBlock !== 'string') return ''
-  return textBlock
-    .split('\n')
-    .filter((line) => line.trim() !== '')
-    .map((line) => {
-      return '<p>' + line.replace(/\*\*(.*?)\.\*\*/g, '<strong>$1.</strong>') + '</p>'
-    })
-    .join('')
+// NUOVA FUNZIONE formatText più intelligente
+const formatText = (dataBlock) => {
+  if (!dataBlock) return ''
+
+  // CASO 1: È un array di oggetti (dal Bestiario, come Tratti e Azioni)
+  if (Array.isArray(dataBlock)) {
+    return dataBlock
+      .map((item) => {
+        let content = `<p><strong>${item.name}.</strong> `
+        // Se è un attacco dettagliato
+        if (item.to_hit) {
+          content += `<em>Attacco con Arma da ${item.type}:</em> ${item.to_hit >= 0 ? '+' : ''}${item.to_hit} al colpire, portata ${item.reach || item.range}. `
+          content += `Colpito: ${item.damage} danni ${item.damage_type || ''}. `
+        }
+        content += `${item.desc || item.description || ''}</p>`
+        return content
+      })
+      .join('')
+  }
+
+  // CASO 2: È una stringa di testo (dai mostri che crei tu)
+  if (typeof dataBlock === 'string') {
+    return dataBlock
+      .split('\n')
+      .filter((line) => line.trim() !== '')
+      .map((line) => '<p>' + line.replace(/\*\*(.*?)\.\*\*/g, '<strong>$1.</strong>') + '</p>')
+      .join('')
+  }
+
+  return ''
 }
 </script>
 
@@ -76,16 +94,6 @@ const formatText = (textBlock) => {
           >,
           <span class="alignment">{{ monster.alignment }}</span>
         </p>
-        <div
-          v-if="monster.description"
-          class="details-section description-text"
-          v-html="formatText(monster.description)"
-        ></div>
-        <div
-          v-if="monster.shareNotes"
-          class="details-section"
-          v-html="formatText(monster.shareNotes)"
-        ></div>
         <hr class="separator" />
         <div class="monster-stats">
           <p>
@@ -117,13 +125,8 @@ const formatText = (textBlock) => {
           </div>
         </div>
         <hr class="separator" v-if="monster.ability_scores" />
-        <div
-          class="details-section"
-          v-if="monster.skills || monster.senses || monster.languages || monster.challenge_rating"
-        >
-          <p v-if="monster.skills">
-            <strong>Abilità:</strong> {{ formatOptionalArray(monster.skills) }}
-          </p>
+        <div class="details-section">
+          <p v-if="monster.skills"><strong>Abilità:</strong> {{ formattedSkills }}</p>
           <p v-if="monster.senses">
             <strong>Sensi:</strong> {{ formatOptionalArray(monster.senses) }}
           </p>
@@ -133,6 +136,7 @@ const formatText = (textBlock) => {
           <p v-if="monster.challenge_rating">
             <strong>Grado Sfida:</strong> {{ monster.challenge_rating }}
           </p>
+          <p v-if="monster.environment"><strong>Ambiente:</strong> {{ monster.environment }}</p>
         </div>
         <hr class="separator" v-if="monster.traits" />
         <div
@@ -145,10 +149,10 @@ const formatText = (textBlock) => {
           <h3>Azioni</h3>
           <div v-html="formatText(monster.actions)"></div>
         </div>
-        <hr class="separator" v-if="monster.dmNotes || monster.dm_prompt" />
-        <div v-if="monster.dmNotes || monster.dm_prompt" class="details-section dm-notes">
+        <hr class="separator" v-if="monster.dm_prompt" />
+        <div v-if="monster.dm_prompt" class="details-section dm-notes">
           <h3>Note del DM</h3>
-          <p>{{ monster.dmNotes || monster.dm_prompt }}</p>
+          <p>{{ monster.dm_prompt }}</p>
         </div>
       </div>
     </div>
