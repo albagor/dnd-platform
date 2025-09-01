@@ -23,51 +23,51 @@ const abilityModifiers = computed(() => {
   return mods
 })
 
-// NUOVA COMPUTED per formattare le abilità
-const formattedSkills = computed(() => {
-  if (!props.monster || !props.monster.skills) return ''
-  // Converte l'oggetto { "Arcano": 7, "Furtività": 4 } in una stringa "Arcano +7, Furtività +4"
-  return Object.entries(props.monster.skills)
-    .map(([skill, bonus]) => `${skill} ${bonus >= 0 ? '+' : ''}${bonus}`)
-    .join(', ')
-})
+// FUNZIONE DI FORMATTAZIONE UNIFICATA
+// Gestisce stringhe, oggetti {chiave: valore}, e array
+const formatProperty = (propertyValue) => {
+  if (!propertyValue) return ''
 
-const formattedSpeed = computed(() => {
-  if (typeof props.monster.speed === 'string') return props.monster.speed
-  return props.monster.speed || ''
-})
+  // Se è una stringa (mostro manuale), la restituisce direttamente
+  if (typeof propertyValue === 'string') {
+    return propertyValue
+  }
+
+  // Se è un array, lo unisce con una virgola
+  if (Array.isArray(propertyValue)) {
+    return propertyValue.join(', ')
+  }
+
+  // Se è un oggetto (mostro del bestiario), lo formatta
+  if (typeof propertyValue === 'object' && propertyValue !== null) {
+    return Object.entries(propertyValue)
+      .map(([key, value]) => {
+        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+        return `${formattedKey} ${value}`
+      })
+      .join(', ')
+  }
+
+  return '' // Fallback per altri tipi di dati
+}
+
+const formattedSkills = computed(() => formatProperty(props.monster.skills))
+const formattedSenses = computed(() => formatProperty(props.monster.senses))
+const formattedLanguages = computed(() => formatProperty(props.monster.languages))
+const formattedSpeed = computed(() => formatProperty(props.monster.speed))
 
 const formattedHpDice = computed(() => {
   if (props.monster.hp_dice) return `(${props.monster.hp_dice})`
   return ''
 })
 
-const formatOptionalArray = (value) => {
-  if (Array.isArray(value)) return value.join(', ')
-  return value || ''
-}
-
-// NUOVA FUNZIONE formatText più intelligente
 const formatText = (dataBlock) => {
   if (!dataBlock) return ''
-
-  // CASO 1: È un array di oggetti (dal Bestiario, come Tratti e Azioni)
   if (Array.isArray(dataBlock)) {
     return dataBlock
-      .map((item) => {
-        let content = `<p><strong>${item.name}.</strong> `
-        // Se è un attacco dettagliato
-        if (item.to_hit) {
-          content += `<em>Attacco con Arma da ${item.type}:</em> ${item.to_hit >= 0 ? '+' : ''}${item.to_hit} al colpire, portata ${item.reach || item.range}. `
-          content += `Colpito: ${item.damage} danni ${item.damage_type || ''}. `
-        }
-        content += `${item.desc || item.description || ''}</p>`
-        return content
-      })
+      .map((item) => `<p><strong>${item.name}.</strong> ${item.desc || item.description || ''}</p>`)
       .join('')
   }
-
-  // CASO 2: È una stringa di testo (dai mostri che crei tu)
   if (typeof dataBlock === 'string') {
     return dataBlock
       .split('\n')
@@ -75,7 +75,6 @@ const formatText = (dataBlock) => {
       .map((line) => '<p>' + line.replace(/\*\*(.*?)\.\*\*/g, '<strong>$1.</strong>') + '</p>')
       .join('')
   }
-
   return ''
 }
 </script>
@@ -127,12 +126,10 @@ const formatText = (dataBlock) => {
         <hr class="separator" v-if="monster.ability_scores" />
         <div class="details-section">
           <p v-if="monster.skills"><strong>Abilità:</strong> {{ formattedSkills }}</p>
-          <p v-if="monster.senses">
-            <strong>Sensi:</strong> {{ formatOptionalArray(monster.senses) }}
-          </p>
-          <p v-if="monster.languages">
-            <strong>Linguaggi:</strong> {{ formatOptionalArray(monster.languages) }}
-          </p>
+          <p v-if="monster.senses"><strong>Sensi:</strong> {{ formattedSenses }}</p>
+
+          <p v-if="monster.languages"><strong>Linguaggi:</strong> {{ formattedLanguages }}</p>
+
           <p v-if="monster.challenge_rating">
             <strong>Grado Sfida:</strong> {{ monster.challenge_rating }}
           </p>
