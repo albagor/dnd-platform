@@ -86,63 +86,84 @@ onMounted(() => {
 })
 
 // --- LOGICA CORE (CARICAMENTO E SALVATAGGIO) ---
+// Sostituisci la vecchia funzione `loadAdventure` con questa
 async function loadAdventure(adventureId) {
   setActiveAdventure(adventureId)
+  isLoadingAdventure.value = true; // 1. Inizia il caricamento
 
-    isLoadingAdventure.value = true;
-
-  activeAdventureId.value = adventureId
+  // Usiamo try...finally per essere sicuri al 100%
+  // che isLoadingAdventure torni a 'false', anche in caso di errori.
+  try {
+    activeAdventureId.value = adventureId
 
     if (adventureUnsubscribe) adventureUnsubscribe(); // Termina l'ascolto precedente
+    if (sharedContentListener) sharedContentListener()
+    if (playersListener) playersListener()
 
+    const docRef = doc(db, 'adventures', adventureId)
+    const docSnap = await getDoc(docRef)
 
-  if (sharedContentListener) sharedContentListener()
-  if (playersListener) playersListener()
-  const docRef = doc(db, 'adventures', adventureId)
-  const docSnap = await getDoc(docRef)
-  if (docSnap.exists()) {
-    const data = docSnap.data()
-    if (!data.combatState) {
-      data.combatState = { combatants: [], combatTurn: 0, turnCount: 1 }
-    }
-    currentAdventure.value = { id: docSnap.id, ...data }
-    const sharedContentRef = collection(db, 'adventures', adventureId, 'sharedContent')
-    sharedContentListener = onSnapshot(sharedContentRef, (snapshot) => {
-      sharedItemIds.value = new Set(snapshot.docs.map((doc) => doc.id))
-    })
-    const playersRef = collection(db, 'adventures', adventureId, 'players')
-    playersListener = onSnapshot(playersRef, async (snapshot) => {
-      const playerPromises = snapshot.docs.map(async (playerDoc) => {
-        const characterSnap = await getDoc(doc(db, 'characterSheets', playerDoc.id))
-        return characterSnap.exists() ? { id: playerDoc.id, ...characterSnap.data() } : null
+    if (docSnap.exists()) {
+      const data = docSnap.data()
+      if (!data.combatState) {
+        data.combatState = { combatants: [], combatTurn: 0, turnCount: 1 }
+      }
+      currentAdventure.value = { id: docSnap.id, ...data }
+
+      // Riattiva gli ascoltatori per i nuovi dati
+      const sharedContentRef = collection(db, 'adventures', adventureId, 'sharedContent')
+      sharedContentListener = onSnapshot(sharedContentRef, (snapshot) => {
+        sharedItemIds.value = new Set(snapshot.docs.map((doc) => doc.id))
       })
-      playersInAdventure.value = (await Promise.all(playerPromises)).filter((p) => p)
-    })
-  } else {
-    currentAdventure.value = null
-    toast.error("Impossibile caricare l'avventura.")
+
+      const playersRef = collection(db, 'adventures', adventureId, 'players')
+      playersListener = onSnapshot(playersRef, async (snapshot) => {
+        const playerPromises = snapshot.docs.map(async (playerDoc) => {
+          const characterSnap = await getDoc(doc(db, 'characterSheets', playerDoc.id))
+          return characterSnap.exists() ? { id: playerDoc.id, ...characterSnap.data() } : null
+        })
+        playersInAdventure.value = (await Promise.all(playerPromises)).filter((p) => p)
+      })
+
+    } else {
+      currentAdventure.value = null
+      toast.error("Impossibile caricare l'avventura.")
+    }
+  } catch (error) {
+    console.error("Errore durante il caricamento dell'avventura:", error);
+    toast.error("Si è verificato un errore nel caricamento.");
+  } finally {
+    isLoadingAdventure.value = false; // 2. Fine del caricamento (LA RIGA CRUCIALE)
   }
 }
 let debounceTimer = null
 watch(
   currentAdventure,
-  (modifiedData) => {
-  // Salva solo se c'è un'avventura attiva e non siamo in fase di caricamento iniziale
-  if (modifiedData && activeAdventureId.value && !isLoadingAdventure.value && oldData) {
-    clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(async () => {
-      try {
-        const docRef = doc(db, 'adventures', activeAdventureId.value)
-        const { id, ...dataToSave } = modifiedData
-        await setDoc(docRef, dataToSave)
-        toast.success('Modifiche salvate!', { timeout: 1500 })
-      } catch (error) {
-        console.error("Errore salvataggio:", error)
-        toast.error('Errore durante il salvataggio.')
-      }
-    }, 2000)
-  }
-}, { deep: true });
+  (modifiedData, oldData) => { // Aggiungi oldData qui per riferimento, anche se non lo usi
+    // Salva solo se c'è un'avventura attiva e non siamo in fase di caricamento iniziale
+    if (modifiedData && activeAdventureId.value && !isLoadingAdventure.value) { // <-- CORREZIONE QUI
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(async () => {
+        try {
+  const docRef = doc(db, 'adventures', activeAdventureId.value)
+  // Usiamo JSON.stringify e JSON.parse per creare una copia "pulita" dell'oggetto
+  const dataToSave = JSON.parse(JSON.stringify(modifiedData)) // <-- QUESTA È LA RIGA CORRETTA
+  delete dataToSave.id // Rimuoviamo l'ID dal corpo del documento
+
+  await setDoc(docRef, dataToSave, { merge: true }) // Usiamo merge: true per sicurezza
+
+          // La toast di successo la mostriamo solo se non ci sono stati errori
+          // e magari solo per la prima modifica di una serie ravvicinata.
+          // Per ora la lasciamo così per semplicità.
+          // toast.success('Modifiche salvate!', { timeout: 1500 })
+
+        } catch (error) {
+          console.error("Errore salvataggio:", error)
+          toast.error('Errore durante il salvataggio.')
+        }
+      }, 2000)
+    }
+  }, { deep: true });
 
 // --- FUNZIONI PER LINK DINAMICI ---
 const allPreparedItems = computed(() => {

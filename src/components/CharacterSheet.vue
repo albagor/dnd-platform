@@ -416,6 +416,11 @@ function addClass() {
 function removeClass(index) {
   character.value.header.classes.splice(index, 1)
 }
+// Funzione da aggiungere
+function onClassChange(classItem) {
+  // Quando la classe cambia, resetta la sottoclasse
+  classItem.subclass = ''
+}
 function addCustomAcBonus() {
   character.value.combat.customAcBonuses.push({ id: Date.now(), name: '', value: 0 })
 }
@@ -846,7 +851,11 @@ function removeSpell(level, spellToRemove) {
               :key="index"
               class="class-row"
             >
-              <select v-model="classItem.name" class="class-select">
+              <select
+                v-model="classItem.name"
+                @change="onClassChange(classItem)"
+                class="class-select"
+              >
                 <option value="" disabled>-- Classe --</option>
                 <option v-for="className in dndClasses" :key="className" :value="className">
                   {{ className }}
