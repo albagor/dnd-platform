@@ -808,6 +808,18 @@ async function removeImage(fieldName) {
 // Funzione per caricare E ASCOLTARE la scheda
 
 // Gestisce il cambio di scheda (es. da un PG a un altro)
+function removeSpell(level, spellToRemove) {
+  if (!character.value || !character.value.spellcasting.spellbook[level]) return
+
+  const spellList = character.value.spellcasting.spellbook[level]
+
+  // Cerca l'incantesimo per nome e lo rimuove
+  const spellIndex = spellList.findIndex((spell) => spell.name === spellToRemove.name)
+
+  if (spellIndex > -1) {
+    spellList.splice(spellIndex, 1)
+  }
+}
 </script>
 
 <template>
@@ -1453,6 +1465,15 @@ async function removeImage(fieldName) {
               >
                 <div class="spell-card-header">
                   <strong>{{ spell.name }}</strong>
+                  <div class="spell-controls">
+                    <button
+                      @click="removeSpell(0, spell)"
+                      class="remove-spell-btn"
+                      title="Rimuovi Trucchetto"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
                 <div class="spell-card-details">
                   <p>
@@ -1510,6 +1531,13 @@ async function removeImage(fieldName) {
                       class="cast-btn"
                     >
                       Lancia
+                    </button>
+                    <button
+                      @click="removeSpell(level, spell)"
+                      class="remove-spell-btn"
+                      title="Rimuovi Incantesimo"
+                    >
+                      ×
                     </button>
                   </div>
                 </div>
@@ -2521,5 +2549,18 @@ textarea {
   .level-input {
     width: 100%;
   }
+}
+.remove-spell-btn {
+  background-color: #c0392b;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 1em;
+  line-height: 20px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0; /* Impedisce che si rimpicciolisca */
 }
 </style>

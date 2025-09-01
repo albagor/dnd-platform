@@ -23,8 +23,9 @@ function removeCustomEntry(list, entry) {
   }
 }
 
-function removeProficiency(listName, entry) {
-  const list = character.value.proficiencies[listName]
+// Questa funzione ora accetta l'oggetto 'character' intero
+function removeProficiency(character, listName, entry) {
+  const list = character.proficiencies[listName]
   if (list) {
     const index = list.indexOf(entry)
     if (index > -1) {
@@ -136,7 +137,7 @@ const modalTitle = computed(() => {
               {{ prof }}
               <button
                 v-if="character.proficiencies.manualArmor.includes(prof)"
-                @click="removeProficiency('manualArmor', prof)"
+                @click="removeProficiency(character, 'manualArmor', prof)"
                 class="remove-entry-btn"
               >
                 ×
@@ -155,7 +156,7 @@ const modalTitle = computed(() => {
               {{ prof }}
               <button
                 v-if="character.proficiencies.manualWeapons.includes(prof)"
-                @click="removeProficiency('manualWeapon', prof)"
+                @click="removeProficiency('manualWeapons', prof)"
                 class="remove-entry-btn"
               >
                 ×
@@ -172,7 +173,10 @@ const modalTitle = computed(() => {
           <div class="prof-list-container">
             <span v-for="tool in character.proficiencies.manualTools" :key="tool" class="prof-item">
               {{ tool }}
-              <button @click="removeProficiency('manualTools', tool)" class="remove-entry-btn">
+              <button
+                @click="removeProficiency(character, 'manualTools', tool)"
+                class="remove-entry-btn"
+              >
                 ×
               </button>
             </span>
@@ -198,7 +202,10 @@ const modalTitle = computed(() => {
               class="prof-item"
             >
               {{ lang }}
-              <button @click="removeProficiency('manualLanguages', lang)" class="remove-entry-btn">
+              <button
+                @click="removeProficiency(character, 'manualLanguages', lang)"
+                class="remove-entry-btn"
+              >
                 ×
               </button>
             </span>
@@ -224,7 +231,10 @@ const modalTitle = computed(() => {
               class="prof-item"
             >
               {{ other }}
-              <button @click="removeProficiency('manualOther', other)" class="remove-entry-btn">
+              <button
+                @click="removeProficiency(character, 'manualOther', other)"
+                class="remove-entry-btn"
+              >
                 ×
               </button>
             </span>
