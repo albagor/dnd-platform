@@ -21,6 +21,12 @@ import { doc, setDoc, onSnapshot } from 'firebase/firestore'
 import { useToast } from 'vue-toastification'
 import { uploadImage } from '@/services/storageService.js'
 import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage'
+// Aggiungi questo import insieme agli altri
+import PrivateChat from './PrivateChat.vue'
+
+const isChatOpen = ref(false)
+
+const adventureInfo = ref(null) // NUOVO: Non più dati di prova, parte da null
 
 const firebaseStorage = getStorage()
 const abilityOrder = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma']
@@ -36,6 +42,7 @@ const savingThrowOrder = [
 const route = useRoute()
 const toast = useToast()
 let characterListener = null
+let sessionListener = null // NUOVO: listener per la sessione
 
 const isAnagraficaOpen = ref(true)
 const isStatsOpen = ref(true)
@@ -272,7 +279,20 @@ onMounted(() => {
   const targetUserId = route.query.charId || auth.currentUser?.uid
   if (targetUserId) {
     setupCharacterListener(targetUserId)
-  }
+  } // NUOVO: Mettiamoci in ascolto del documento della sessione attiva
+  const sessionDocRef = doc(db, 'sessions', 'active_session')
+  sessionListener = onSnapshot(sessionDocRef, (docSnap) => {
+    if (docSnap.exists()) {
+      // Se esiste una sessione, salviamo le informazioni
+      adventureInfo.value = {
+        adventureId: docSnap.data().adventureId,
+        dmId: docSnap.data().dmId,
+      }
+    } else {
+      // Se non esiste, la chat non sarà disponibile
+      adventureInfo.value = null
+    }
+  })
 })
 onBeforeRouteUpdate((to, from) => {
   const newTargetId = to.query.charId || auth.currentUser?.uid
@@ -283,6 +303,7 @@ onBeforeRouteUpdate((to, from) => {
 })
 onUnmounted(() => {
   if (characterListener) characterListener() // Interrompe l'ascolto quando si lascia la pagina
+  if (sessionListener) sessionListener() // NUOVO: Interrompiamo l'ascolto della sessione
 })
 // --- SOLO UN WATCHER DI SALVATAGGIO, SEMPRE SU character.value.id (che è il player in ascolto) ---
 let debounceTimer = null
@@ -1636,6 +1657,19 @@ function removeSpell(level, spellToRemove) {
         </div>
       </div>
     </div>
+
+    <button v-if="adventureInfo" @click="isChatOpen = true" class="chat-fab" title="Chat con il DM">
+      💬
+    </button>
+
+    <PrivateChat
+      v-if="isChatOpen && character.id && adventureInfo"
+      :adventure-id="adventureInfo.adventureId"
+      :dm-id="adventureInfo.dmId"
+      :recipient-id="adventureInfo.dmId"
+      recipient-name="Dungeon Master"
+      @close="isChatOpen = false"
+    />
   </div>
 </template>
 
@@ -2571,5 +2605,24 @@ textarea {
   cursor: pointer;
   padding: 0;
   flex-shrink: 0; /* Impedisce che si rimpicciolisca */
+}
+/* Aggiungi questo stile alla fine del file */
+.chat-fab {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  background-color: #8e44ad;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 2em;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

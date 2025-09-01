@@ -15,6 +15,8 @@ import CombatTracker from './combatTracker.vue'
 import CharacterStatBlock from './CharacterStatBlock.vue'
 import ItemDetails from './ItemDetails.vue'
 import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage' // <-- AGGIUNGI QUESTO IMPORTO
+import PrivateChat from './PrivateChat.vue';
+
 
 const firebaseStorage = getStorage() // <-- AGGIUNGI QUESTA INIZIALIZZAZIONE
 const abilityOrder = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
@@ -75,6 +77,8 @@ const isCharacterDetailsModalOpen = ref(false)
 const selectedCharacterForModal = ref(null)
 const isItemDetailsModalOpen = ref(false)
 const selectedItemForModal = ref(null)
+const chatTarget = ref(null); // NUOVO: Conterrà i dati del giocatore con cui chattare
+
 
 // --- GESTIONE CICLO DI VITA ---
 onMounted(() => {
@@ -454,6 +458,15 @@ function removeChapter(chapterId) {
 }
 // --- NUOVE FUNZIONI PER GESTIONE IMMAGINI ---
 
+
+// NUOVA FUNZIONE: per aprire la chat con un giocatore specifico
+function openChatWithPlayer(player) {
+  chatTarget.value = {
+    playerId: player.id,
+    playerName: player.header.name,
+  };
+}
+
 // Funzione per cancellare l'immagine (o il suo URL)
 async function removeImage(item, fieldName) {
   if (!currentAdventure.value || !item || !item[fieldName]) return
@@ -534,6 +547,9 @@ function setImageFromUrl(item, fieldName, event) {
                   >PF: {{ player.combat.hp.current }} / {{ player.combat.hp.max }}</span
                 >
               </div>
+                <button @click.stop="openChatWithPlayer(player)" class="chat-player-btn" title="Chatta con il giocatore">
+    💬
+  </button>
               <button @click.stop="removePlayer(player.id)" class="remove-player-btn">×</button>
             </li>
           </ul>
@@ -1022,6 +1038,15 @@ function setImageFromUrl(item, fieldName, event) {
       :character="selectedCharacterForModal"
       @close="isCharacterDetailsModalOpen = false"
     />
+
+    <PrivateChat
+  v-if="chatTarget && currentAdventure"
+  :adventure-id="currentAdventure.id"
+  :dm-id="userStore.user.uid"
+  :recipient-id="chatTarget.playerId"
+  :recipient-name="chatTarget.playerName"
+  @close="chatTarget = null"
+/>
   </div>
 </template>
 
@@ -1782,5 +1807,17 @@ function setImageFromUrl(item, fieldName, event) {
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 1rem;
+}
+.chat-player-btn {
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 0 5px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.chat-player-btn:hover {
+  opacity: 1;
 }
 </style>
