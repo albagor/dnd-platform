@@ -1,37 +1,50 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { dndSpells } from '@/data/dndSpells.js';
+import { ref, computed } from 'vue'
+import { dndSpells } from '@/data/dndSpells.js'
 
-const emit = defineEmits(['close', 'addSpell']);
+const emit = defineEmits(['close', 'addSpell'])
 
-const searchTerm = ref('');
-const selectedLevel = ref(null);
-const selectedClass = ref(null); // NUOVO: Filtro per classe
-const selectedSchool = ref(null); // NUOVO: Filtro per scuola
+const searchTerm = ref('')
+const selectedLevel = ref(null)
+const selectedClass = ref(null)
+const selectedSchool = ref(null)
 
-// NUOVO: Genera dinamicamente le opzioni per i filtri
+// STEP 1: Creiamo una lista di incantesimi UNICI partendo dai dati "sporchi".
+const uniqueSpells = computed(() => {
+  const seen = new Set()
+  return dndSpells.filter((spell) => {
+    const isDuplicate = seen.has(spell.name)
+    seen.add(spell.name)
+    return !isDuplicate
+  })
+})
+
+// Genera dinamicamente le opzioni per i filtri (usando la lista pulita)
 const allSpellClasses = computed(() => {
-  const classes = new Set();
-  dndSpells.forEach(spell => spell.classes.forEach(c => classes.add(c)));
-  return Array.from(classes).sort();
-});
+  const classes = new Set()
+  uniqueSpells.value.forEach((spell) => spell.classes.forEach((c) => classes.add(c)))
+  return Array.from(classes).sort()
+})
 const allSpellSchools = computed(() => {
-  const schools = new Set(dndSpells.map(spell => spell.school));
-  return Array.from(schools).sort();
-});
+  const schools = new Set(uniqueSpells.value.map((spell) => spell.school))
+  return Array.from(schools).sort()
+})
 
+// STEP 2: La logica di filtraggio ora lavora sulla lista di incantesimi UNICI.
 const filteredSpells = computed(() => {
-  return dndSpells.filter(spell => {
-    const matchesSearch = spell.name.toLowerCase().includes(searchTerm.value.toLowerCase());
-    const matchesLevel = selectedLevel.value === null || spell.level === selectedLevel.value;
-    const matchesClass = selectedClass.value === null || spell.classes.includes(selectedClass.value);
-    const matchesSchool = selectedSchool.value === null || spell.school === selectedSchool.value;
-    return matchesSearch && matchesLevel && matchesClass && matchesSchool;
-  });
-});
+  const spells = uniqueSpells.value.filter((spell) => {
+    const matchesSearch = spell.name.toLowerCase().includes(searchTerm.value.toLowerCase())
+    const matchesLevel = selectedLevel.value === null || spell.level === selectedLevel.value
+    const matchesClass = selectedClass.value === null || spell.classes.includes(selectedClass.value)
+    const matchesSchool = selectedSchool.value === null || spell.school === selectedSchool.value
+    return matchesSearch && matchesLevel && matchesClass && matchesSchool
+  })
+  // Aggiungiamo l'ordinamento per avere sempre una lista consistente
+  return spells.sort((a, b) => a.name.localeCompare(b.name))
+})
 
 function addSpell(spell) {
-  emit('addSpell', { level: spell.level, name: spell.name });
+  emit('addSpell', { level: spell.level, name: spell.name })
 }
 </script>
 
@@ -43,18 +56,27 @@ function addSpell(spell) {
         <button @click="$emit('close')" class="close-btn">×</button>
       </div>
       <div class="grimoire-controls">
-        <input type="text" v-model="searchTerm" placeholder="Cerca per nome..." class="search-input">
+        <input
+          type="text"
+          v-model="searchTerm"
+          placeholder="Cerca per nome..."
+          class="search-input"
+        />
         <select v-model.number="selectedLevel" class="level-filter">
           <option :value="null">Tutti i Livelli</option>
-          <option v-for="n in 10" :key="n-1" :value="n-1">Livello {{ n-1 }}</option>
+          <option v-for="n in 10" :key="n - 1" :value="n - 1">Livello {{ n - 1 }}</option>
         </select>
         <select v-model="selectedClass" class="level-filter">
           <option :value="null">Tutte le Classi</option>
-          <option v-for="className in allSpellClasses" :key="className" :value="className">{{ className }}</option>
+          <option v-for="className in allSpellClasses" :key="className" :value="className">
+            {{ className }}
+          </option>
         </select>
         <select v-model="selectedSchool" class="level-filter">
           <option :value="null">Tutte le Scuole</option>
-          <option v-for="school in allSpellSchools" :key="school" :value="school">{{ school }}</option>
+          <option v-for="school in allSpellSchools" :key="school" :value="school">
+            {{ school }}
+          </option>
         </select>
       </div>
       <div class="spell-list-container">
@@ -65,15 +87,17 @@ function addSpell(spell) {
               <span>(Liv. {{ spell.level }} - {{ spell.school }})</span>
             </div>
             <div class="spell-details">
-                <span><strong>Tempo di Lancio:</strong> {{ spell.casting_time }}</span>
-                <span><strong>Raggio:</strong> {{ spell.range }}</span>
-                <span><strong>Bersaglio:</strong> {{ spell.target }}</span>
-                <span><strong>Componenti:</strong> {{ spell.components.join(', ') }}</span>
-                <span v-if="spell.material"><strong>Materiale:</strong> {{ spell.material }}</span>
-                <span><strong>Durata:</strong> {{ spell.duration }}</span>
+              <span><strong>Tempo di Lancio:</strong> {{ spell.casting_time }}</span>
+              <span><strong>Raggio:</strong> {{ spell.range }}</span>
+              <span><strong>Bersaglio:</strong> {{ spell.target }}</span>
+              <span><strong>Componenti:</strong> {{ spell.components.join(', ') }}</span>
+              <span v-if="spell.material"><strong>Materiale:</strong> {{ spell.material }}</span>
+              <span><strong>Durata:</strong> {{ spell.duration }}</span>
             </div>
             <p class="spell-description">{{ spell.description }}</p>
-            <p v-if="spell.higher_level" class="spell-higher-level"><strong>A Livelli Superiori:</strong> {{ spell.higher_level }}</p>
+            <p v-if="spell.higher_level" class="spell-higher-level">
+              <strong>A Livelli Superiori:</strong> {{ spell.higher_level }}
+            </p>
           </div>
           <button @click="addSpell(spell)" class="add-spell-btn">+</button>
         </div>
@@ -103,7 +127,7 @@ function addSpell(spell) {
   color: #333;
   border-radius: 8px;
   border: 2px solid #bca789;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
 }
@@ -133,7 +157,8 @@ function addSpell(spell) {
   gap: 10px;
   border-bottom: 1px solid #ddd;
 }
-.search-input, .level-filter {
+.search-input,
+.level-filter {
   padding: 8px;
   border-radius: 4px;
   border: 1px solid #ccc;
@@ -160,10 +185,10 @@ function addSpell(spell) {
   flex-grow: 1;
 }
 .spell-title {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-bottom: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 .spell-name {
   font-size: 1.2em;
@@ -171,14 +196,14 @@ function addSpell(spell) {
   color: #5c3d03;
 }
 .spell-details {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 0.8em;
-    background-color: #f3f0e9;
-    padding: 8px;
-    border-radius: 4px;
-    margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8em;
+  background-color: #f3f0e9;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
 }
 .spell-description {
   font-size: 0.9em;
@@ -187,10 +212,10 @@ function addSpell(spell) {
   line-height: 1.4;
 }
 .spell-higher-level {
-    font-size: 0.85em;
-    color: #555;
-    margin-top: 8px;
-    font-style: italic;
+  font-size: 0.85em;
+  color: #555;
+  margin-top: 8px;
+  font-style: italic;
 }
 .add-spell-btn {
   background-color: #2ecc71;
