@@ -1,3 +1,5 @@
+// dnd-strumenti interattivi © 2025 Dario Pellitteri. All rights reserved.
+
 import './assets/main.css'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

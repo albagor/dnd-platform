@@ -1,0 +1,65 @@
+CONTRATTO DI LICENZA D’USO FINALE (EULA)
+
+Il presente Contratto di Licenza d’Uso Finale (“Contratto”) è un accordo legale tra l’utente (“Utente”) e Dario Pellitteri (“Licenziante”) per l’utilizzo dell’applicazione software “dnd-platform” (“Software”).
+
+1. Concessione di Licenza
+Il Licenziante concede all’Utente una licenza non esclusiva e non trasferibile per utilizzare il Software per scopi personali o commerciali, secondo i termini di questo Contratto.
+
+2. Restrizioni
+L’Utente non può:
+
+Copiare, modificare o distribuire il Software salvo quanto espressamente consentito.
+Decodificare, decompilare o disassemblare il Software.
+Utilizzare il Software per scopi illeciti.
+Trasferire, sublicenziare o concedere in locazione il Software a terzi.
+3. Proprietà
+Il Software è di proprietà del Licenziante ed è protetto dalle leggi sul diritto d’autore. Tutti i diritti non espressamente concessi sono riservati al Licenziante.
+
+4. Risoluzione
+Il presente Contratto è valido fino alla risoluzione. Il Licenziante può risolvere il Contratto se l’Utente viola uno qualsiasi dei termini. Alla risoluzione, l’Utente deve distruggere tutte le copie del Software.
+
+5. Esclusione di Garanzia
+Il Software viene fornito “così com’è” senza alcuna garanzia. Il Licenziante non garantisce che il Software sia privo di errori o soddisfi le esigenze dell’Utente.
+
+6. Limitazione di Responsabilità
+Il Licenziante non sarà responsabile per eventuali danni derivanti dall’uso o dall’impossibilità di usare il Software.
+
+7. Legge Applicabile
+Il presente Contratto è regolato dalla legge italiana.
+
+8. Contatti
+Per domande o richieste di licenza, contattare: dpellitteri@gmail.com
+
+---------------------------------------------------------------------------------------------------
+
+END USER LICENSE AGREEMENT (EULA)
+
+This End User License Agreement (“Agreement”) is a legal agreement between you (“User”) and Dario Pellitteri (“Licensor”) for the use of the software application “dnd-platform” (“Software”).
+
+1. License Grant
+Licensor grants User a non-exclusive, non-transferable license to use the Software for personal or commercial purposes, subject to the terms of this Agreement.
+
+2. Restrictions
+User may not:
+
+Copy, modify, or distribute the Software except as expressly permitted.
+Reverse engineer, decompile, or disassemble the Software.
+Use the Software for unlawful purposes.
+Transfer, sublicense, or lease the Software to any third party.
+3. Ownership
+The Software is owned by Licensor and is protected by copyright laws. All rights not expressly granted are reserved by Licensor.
+
+4. Termination
+This Agreement is effective until terminated. Licensor may terminate this Agreement if User fails to comply with any term. Upon termination, User must destroy all copies of the Software.
+
+5. Disclaimer of Warranty
+The Software is provided “as is” without warranty of any kind. Licensor does not warrant that the Software will be error-free or meet User’s requirements.
+
+6. Limitation of Liability
+Licensor shall not be liable for any damages arising out of the use or inability to use the Software.
+
+7. Governing Law
+This Agreement shall be governed by the laws of Italy.
+
+8. Contact
+For questions or licensing inquiries, contact: dpellitteri@gmail.com

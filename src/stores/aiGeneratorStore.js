@@ -1,4 +1,6 @@
 // src/stores/aiGeneratorStore.js
+// dnd-strumenti interattivi © 2025 Dario Pellitteri. All rights reserved.
+
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { useAdventureStore } from '@/stores/adventureStore'

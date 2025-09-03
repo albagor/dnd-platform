@@ -1,0 +1,45 @@
+PRIVACY POLICY (IT)
+
+Questa applicazione ("dnd-strumenti-interattivi") raccoglie e tratta dati personali limitati, come indirizzi email e nomi utente, esclusivamente per consentire l’accesso e l’utilizzo delle funzionalità offerte.
+
+Tipologia di dati raccolti:
+
+Email (anche fittizie o non verificate)
+Nome utente
+Finalità del trattamento:
+I dati sono utilizzati solo per la gestione degli account utente e non vengono ceduti a terzi, né utilizzati per finalità di marketing o profilazione.
+
+Modalità di conservazione:
+I dati sono conservati su server sicuri tramite Firebase/Firestore. L’utente può richiedere la cancellazione del proprio account e dei dati associati in qualsiasi momento.
+
+Responsabilità dell’utente:
+L’utente è responsabile dei dati inseriti. Può scegliere di utilizzare dati fittizi o anonimi.
+
+Diritti dell’utente:
+L’utente può esercitare i diritti previsti dal GDPR (accesso, rettifica, cancellazione, limitazione, opposizione) contattando il titolare all’indirizzo: dpellitteri@gmail.com
+
+Titolare del trattamento:
+Dario Pellitteri, Roma
+
+PRIVACY POLICY (EN)
+
+This application (“dnd-strumenti-interattivi") collects and processes limited personal data, such as email addresses and usernames, solely to enable access and use of the provided features.
+
+Types of data collected:
+
+Email (including fictitious or unverified addresses)
+Username
+Purpose of processing:
+Data is used only for user account management and is not shared with third parties, nor used for marketing or profiling purposes.
+
+Data storage:
+Data is stored securely on servers via Firebase/Firestore. Users may request deletion of their account and associated data at any time.
+
+User responsibility:
+Users are responsible for the data they enter. They may choose to use fictitious or anonymous data.
+
+User rights:
+Users may exercise their rights under the GDPR (access, rectification, erasure, restriction, objection) by contacting the owner at: dpellitteri@gmail.com
+
+Data controller:
+Dario Pellitteri, Roma

@@ -1,4 +1,6 @@
 <script setup>
+// dnd-strumenti interattivi © 2025 Dario Pellitteri. All rights reserved.
+
 import { ref, onMounted } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { auth } from '@/firebaseConfig'

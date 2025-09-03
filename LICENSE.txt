@@ -1,0 +1,9 @@
+Copyright (c) 2025 Dario Pellitteri
+
+All rights reserved.
+
+This software and its source code are the exclusive property of Dario Pellitteri. Unauthorized copying, distribution, modification, or commercial use is strictly prohibited without prior written consent.
+
+You may use this software only in accordance with the terms of the End User License Agreement (EULA) provided with this application.
+
+For licensing inquiries, contact: dpellitteri@gmail.com

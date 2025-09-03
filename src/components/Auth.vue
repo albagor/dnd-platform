@@ -2,14 +2,15 @@
 import { ref } from 'vue'
 import { auth, db } from '@/firebaseConfig'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore' // Importiamo setDoc
+import { doc, setDoc } from 'firebase/firestore'
 import { useToast } from 'vue-toastification'
+import { verifyDmCode } from '@/services/dmCodeService' // Importa la funzione
 
 const toast = useToast()
 const isRegister = ref(false)
 const email = ref('')
 const password = ref('')
-const dmCode = ref('') // Nuovo stato per il codice DM
+const dmCode = ref('')
 
 const handleSubmit = async () => {
   if (!email.value || !password.value) {
@@ -21,8 +22,12 @@ const handleSubmit = async () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value)
       const user = userCredential.user
 
-      // 2. Determina il ruolo
-      const role = dmCode.value === import.meta.env.VITE_DM_SECRET_CODE ? 'DM' : 'Player'
+      // 2. Verifica il codice DM su Firestore
+      let role = 'Player'
+      if (dmCode.value) {
+        const isValidDm = await verifyDmCode(dmCode.value)
+        role = isValidDm ? 'DM' : 'Player'
+      }
 
       // 3. Crea il documento utente in Firestore
       await setDoc(doc(db, 'users', user.uid), {
@@ -38,7 +43,6 @@ const handleSubmit = async () => {
       toast.success('Accesso effettuato!')
     }
   } catch (error) {
-    // ... gestione errori ...
     toast.error('Si è verificato un errore: ' + error.message)
   }
 }
@@ -74,7 +78,6 @@ const handleSubmit = async () => {
 </template>
 
 <style scoped>
-/* Lo stile rimane invariato, ti fornisco quello che avevamo per completezza */
 .auth-container {
   display: flex;
   justify-content: center;

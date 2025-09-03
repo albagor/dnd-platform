@@ -1,4 +1,7 @@
 // src/stores/sessionStore.js
+
+// dnd-strumenti interattivi © 2025 Dario Pellitteri. All rights reserved.
+
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 

@@ -1,4 +1,7 @@
 // src/stores/userStore.js
+
+// dnd-strumenti interattivi © 2025 Dario Pellitteri. All rights reserved.
+
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { db } from '@/firebaseConfig'

@@ -1,3 +1,5 @@
+// dnd-strumenti interattivi © 2025 Dario Pellitteri. All rights reserved.
+
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { auth, db } from '@/firebaseConfig'

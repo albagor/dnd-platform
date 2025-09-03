@@ -1,0 +1,49 @@
+Guida alla configurazione di Firebase/Firestore
+
+Crea un account Google
+Se non ne hai già uno, registrati su https://firebase.google.com/
+
+Crea un nuovo progetto Firebase
+
+Accedi alla console Firebase.
+Clicca su “Aggiungi progetto” e segui la procedura guidata.
+Abilita Firestore Database
+
+Nel menu del progetto, vai su “Firestore Database”.
+Clicca su “Crea database” e scegli la modalità di sicurezza (test o produzione).
+Configura l’autenticazione (se necessario)
+
+Vai su “Authentication” e abilita il metodo di accesso desiderato (email/password, Google, ecc.).
+Ottieni le chiavi di configurazione
+
+Nel menu “Project settings” (Impostazioni progetto), copia la configurazione Firebase (apiKey, authDomain, projectId, ecc.).
+Inserisci le chiavi nel progetto
+
+Apri il file firebaseConfig.js (o simile).
+Sostituisci i valori di esempio con quelli del tuo progetto Firebase.
+Esempio:
+
+---------------------------------------------------------------------------------
+|										|
+|	    const firebaseConfig = {						|
+| 		apiKey: "INSERISCI_LA_TUA_API_KEY",				|
+| 		authDomain: "INSERISCI_LA_TUA_AUTH_DOMAIN",			|
+|  		projectId: "INSERISCI_IL_TUO_PROJECT_ID",			|
+|  		storageBucket: "INSERISCI_IL_TUO_STORAGE_BUCKET",		|
+|  		messagingSenderId: "INSERISCI_IL_TUO_MESSAGING_SENDER_ID",	|
+|  		appId: "INSERISCI_IL_TUO_APP_ID"				|
+|	    };									|
+|										|
+---------------------------------------------------------------------------------
+
+
+Imposta le regole di sicurezza Firestore
+
+Personalizza le regole in base alle tue esigenze (vedi file FIRESTORE_RULES.txt per esempio).
+Avvia l’app
+
+Installa le dipendenze (npm install)
+Avvia in locale (npm run dev) o crea la build (npm run build)
+Nota:
+Non condividere mai le tue chiavi Firebase originali.
+Il nuovo proprietario deve generare e usare le proprie chiavi per sicurezza e privacy.
