@@ -948,19 +948,24 @@ function setImageFromUrl(item, fieldName, event) {
       </div>
     </div>
     <div class="right-sidebar">
-      <section v-if="currentAdventure" class="dm-notes-panel box">
-        <div class="section-header" @click="isDmNotesOpen = !isDmNotesOpen">
-          <h3>Note per il DM</h3>
-          <span class="toggle-icon">{{ isDmNotesOpen ? '▼' : '▶' }}</span>
-        </div>
-        <div v-if="isDmNotesOpen" class="section-content">
-          <textarea
-            v-model="currentAdventure.dmNotes"
-            class="text-editor"
-            placeholder="Appunti privati per il Dungeon Master..."
-          ></textarea>
-        </div>
-      </section>
+<section v-if="currentAdventure" class="dm-notes-panel box">
+  <div class="section-header" @click="isDmNotesOpen = !isDmNotesOpen">
+    <h3>Note per il DM</h3>
+    <span class="toggle-icon">{{ isDmNotesOpen ? '▼' : '▶' }}</span>
+  </div>
+  <div v-if="isDmNotesOpen" class="section-content">
+    <textarea
+      v-model="currentAdventure.dmNotes"
+      class="text-editor"
+      placeholder="Appunti privati per il Dungeon Master..."
+    ></textarea>
+    <div
+      class="linked-text-preview"
+      v-html="renderLinkedText(currentAdventure.dmNotes)"
+      @click="showDetails"
+    ></div>
+  </div>
+</section>
       <section class="dm-dice-roller box">
         <div class="section-header" @click="isDmDiceOpen = !isDmDiceOpen">
           <h3>Tira Dadi DM</h3>
