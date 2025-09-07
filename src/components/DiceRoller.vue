@@ -1,21 +1,57 @@
 <script setup>
 import { useDiceStore } from '@/stores/diceStore'
-import { computed, onMounted, onUnmounted } from 'vue'
+import { useAdventureStore } from '@/stores/adventureStore'
+import { useSessionStore } from '@/stores/sessionStore'
+import { computed, onMounted, ref, watch } from 'vue'
+import { auth } from '@/firebaseConfig'
+import { onAuthStateChanged } from 'firebase/auth'
+import { storeToRefs } from 'pinia'
+import { useToast } from 'vue-toastification' // <-- RIGA MANCANTE, AGGIUNTA QUI
 
 const diceStore = useDiceStore()
+const adventureStore = useAdventureStore()
+const sessionStore = useSessionStore()
+const toast = useToast() // Inizializza il toast una volta sola
+
+const { activeAdventureId: dmAdventureId } = storeToRefs(adventureStore)
+const { joinedSession: playerSession } = storeToRefs(sessionStore)
+
+const activeAdventureId = computed(() => {
+  if (dmAdventureId.value) return dmAdventureId.value
+  if (playerSession.value && playerSession.value.adventureId) return playerSession.value.adventureId
+  return null
+})
+
+const isUserReady = ref(false)
+
+onMounted(() => {
+  onAuthStateChanged(auth, (user) => {
+    isUserReady.value = !!user
+  })
+  diceStore.subscribeToHistory(activeAdventureId.value)
+})
+
+watch(activeAdventureId, (newId) => {
+  diceStore.subscribeToHistory(newId)
+})
 
 const lastResult = computed(() => {
   return diceStore.diceHistory.length > 0 ? diceStore.diceHistory[0] : null
 })
 
 function rollDice(sides) {
-  const result = Math.floor(Math.random() * sides) + 1
-  diceStore.addRoll(sides, result, `Tiro d${sides}`)
-}
+  if (!isUserReady.value) {
+    toast.error('Devi essere autenticato per tirare i dadi!')
+    return
+  }
+  if (!activeAdventureId.value) {
+    toast.error("Seleziona un'avventura per salvare i tiri.")
+    return
+  }
 
-onMounted(() => {
-  diceStore.subscribeToHistory()
-})
+  const result = Math.floor(Math.random() * sides) + 1
+  diceStore.addRoll(sides, result, `Tiro d${sides}`, activeAdventureId.value)
+}
 </script>
 
 <template>
@@ -34,13 +70,16 @@ onMounted(() => {
     <h2>Ultimo Risultato: {{ lastResult ? lastResult.result : '...' }}</h2>
 
     <div class="dice-tray">
-      <button @click="rollDice(4)">Tira un d4</button>
-      <button @click="rollDice(6)">Tira un d6</button>
-      <button @click="rollDice(8)">Tira un d8</button>
-      <button @click="rollDice(10)">Tira un d10</button>
-      <button @click="rollDice(12)">Tira un d12</button>
-      <button @click="rollDice(20)">Tira un d20</button>
-      <button @click="rollDice(100)">Tira un d100</button>
+      <button @click="rollDice(4)" :disabled="!isUserReady">Tira un d4</button>
+      <button @click="rollDice(6)" :disabled="!isUserReady">Tira un d6</button>
+      <button @click="rollDice(8)" :disabled="!isUserReady">Tira un d8</button>
+      <button @click="rollDice(10)" :disabled="!isUserReady">Tira un d10</button>
+      <button @click="rollDice(12)" :disabled="!isUserReady">Tira un d12</button>
+      <button @click="rollDice(20)" :disabled="!isUserReady">Tira un d20</button>
+      <button @click="rollDice(100)" :disabled="!isUserReady">Tira un d100</button>
+      <span v-if="!isUserReady" style="color: #ff5555; margin-left: 1rem"
+        >Effettua il login per tirare i dadi!</span
+      >
     </div>
 
     <div class="history">

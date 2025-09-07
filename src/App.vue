@@ -23,6 +23,7 @@ const sessionStore = useSessionStore() // Attiva la memoria
 
 onMounted(() => {
   onAuthStateChanged(auth, (user) => {
+    console.log('DEBUG - onAuthStateChanged:', user)
     isLoggedIn.value = !!user
     if (user) {
       userStore.fetchUser(user)
@@ -65,13 +66,13 @@ const handleLogout = async () => {
 
           <template v-else>
             <RouterLink
-              v-if="sessionStore.joinedAdventureId"
-              :to="`/sessione/${sessionStore.joinedAdventureId}`"
-              >Sessione Attiva</RouterLink
+              v-if="sessionStore.joinedSession"
+              :to="`/sessione/${sessionStore.joinedSession.adventureId}`"
             >
+              Torna alla Sessione
+            </RouterLink>
             <RouterLink v-else to="/lobby">Unisciti a Sessione</RouterLink>
           </template>
-
           <a @click="handleLogout" class="logout-btn">Logout</a>
         </nav>
       </header>

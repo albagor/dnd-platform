@@ -1,44 +1,76 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onUnmounted, computed, watch } from 'vue' // Aggiungi 'computed' e 'watch'
 import { db, auth } from '@/firebaseConfig'
 import { collection, query, onSnapshot, addDoc, orderBy, serverTimestamp } from 'firebase/firestore'
 import { useAdventureStore } from '@/stores/adventureStore'
+import { useSessionStore } from '@/stores/sessionStore' // Importa lo store del giocatore
 import { storeToRefs } from 'pinia'
 import { useToast } from 'vue-toastification'
 
 const adventureStore = useAdventureStore()
-const { activeAdventureId } = storeToRefs(adventureStore)
+const sessionStore = useSessionStore() // Attiva lo store del giocatore
 const toast = useToast()
+
+const { activeAdventureId: dmAdventureId } = storeToRefs(adventureStore)
+const { joinedSession: playerSession } = storeToRefs(sessionStore)
+
+// NUOVO: Un computed property che trova l'ID corretto, che tu sia DM o Giocatore
+const activeId = computed(() => {
+  if (dmAdventureId.value) return dmAdventureId.value // Priorità al DM
+  if (playerSession.value) return playerSession.value.adventureId // Fallback sul giocatore
+  return null
+})
 
 const entries = ref([])
 const newEntryText = ref('')
 let journalListener = null
 
-onMounted(() => {
-  if (activeAdventureId.value) {
-    const journalRef = collection(db, 'adventures', activeAdventureId.value, 'journal')
-    const q = query(journalRef, orderBy('timestamp', 'desc'))
-
-    journalListener = onSnapshot(q, (snapshot) => {
-      entries.value = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-    })
+function cleanupListener() {
+  if (journalListener) {
+    journalListener()
+    journalListener = null
   }
-})
+}
+
+// Ora il watch osserva il nostro ID unificato
+watch(
+  activeId,
+  (newId) => {
+    cleanupListener()
+    entries.value = []
+
+    if (newId) {
+      const journalRef = collection(db, 'adventures', newId, 'journal')
+      const q = query(journalRef, orderBy('timestamp', 'desc'))
+      journalListener = onSnapshot(
+        q,
+        (snapshot) => {
+          entries.value = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+        },
+        (error) => {
+          console.error('Errore di permessi sul diario:', error)
+          toast.error('Non hai i permessi per visualizzare questo diario.')
+        },
+      )
+    }
+  },
+  { immediate: true },
+)
 
 onUnmounted(() => {
-  if (journalListener) journalListener()
+  cleanupListener()
 })
 
 async function addEntry() {
-  if (!newEntryText.value.trim() || !activeAdventureId.value) return
+  if (!newEntryText.value.trim() || !activeId.value) return
 
-  const journalRef = collection(db, 'adventures', activeAdventureId.value, 'journal')
-
+  const journalRef = collection(db, 'adventures', activeId.value, 'journal')
   try {
     await addDoc(journalRef, {
-      text: newEntryText.value,
+      content: newEntryText.value,
+      authorId: auth.currentUser.uid,
       author: auth.currentUser.email,
-      timestamp: serverTimestamp(), // Usa il timestamp del server
+      timestamp: serverTimestamp(),
     })
     newEntryText.value = ''
     toast.success('Voce del diario aggiunta!')
@@ -57,7 +89,7 @@ function formatDate(timestamp) {
 <template>
   <div class="journal-container">
     <h1>Diario di Campagna</h1>
-    <div v-if="activeAdventureId" class="journal-content">
+    <div v-if="activeId" class="journal-content">
       <div class="new-entry-box box">
         <h3>Aggiungi una nuova voce</h3>
         <textarea

@@ -1,17 +1,23 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
+import { useSessionStore } from '@/stores/sessionStore'
 import { db } from '@/firebaseConfig'
 import { doc, onSnapshot } from 'firebase/firestore'
 
+const router = useRouter()
+const sessionStore = useSessionStore()
 const activeSession = ref(null)
 const isLoading = ref(true)
-
 let sessionListener = null
+
+function joinSession(sessionData) {
+  sessionStore.setJoinedSession(sessionData)
+  router.push(`/sessione/${sessionData.adventureId}`)
+}
 
 onMounted(() => {
   const sessionDocRef = doc(db, 'sessions', 'active_session')
-
   sessionListener = onSnapshot(sessionDocRef, (docSnap) => {
     if (docSnap.exists()) {
       activeSession.value = docSnap.data()
@@ -39,9 +45,9 @@ onUnmounted(() => {
         <p>
           Partita gestita da: <strong>{{ activeSession.dmName }}</strong>
         </p>
-        <RouterLink :to="`/sessione/${activeSession.adventureId}`" class="join-button">
+        <button class="join-button" @click="joinSession(activeSession)">
           Partecipa alla Sessione
-        </RouterLink>
+        </button>
       </div>
       <div v-else class="waiting-message">
         <p>Nessuna sessione attiva al momento. Attendi che il tuo DM avvii una partita!</p>
@@ -51,6 +57,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Il tuo stile rimane invariato, è già perfetto */
 .lobby-container {
   width: 100%;
   max-width: 700px;
@@ -88,6 +95,8 @@ h1 {
   font-weight: bold;
   border-radius: 5px;
   transition: background-color 0.2s;
+  cursor: pointer;
+  border: none;
 }
 .join-button:hover {
   background-color: #2ecc71;

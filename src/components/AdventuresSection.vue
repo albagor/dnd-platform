@@ -38,6 +38,8 @@ const uiStore = useUiStore()
 const { isBestiaryOpen } = storeToRefs(uiStore)
 const toast = useToast()
 
+
+
 // --- STATO DEL COMPONENTE ---
 const currentAdventure = ref(null)
 const isLoadingAdventure = ref(false)
@@ -249,9 +251,14 @@ async function endSession() {
   toast.info('Sessione terminata.')
 }
 function openInviteModal() {
-  if (!activeAdventureId.value) return
-  inviteLink.value = `${window.location.origin}/sessione/${activeAdventureId.value}`
-  isInviteModalOpen.value = true
+  // Controlla che un'avventura sia stata caricata e abbia un ID valido
+  if (!currentAdventure.value || !currentAdventure.value.id) {
+    toast.error("Per favore, seleziona un'avventura valida prima di invitare i giocatori.");
+    return;
+  }
+  // Usa l'ID direttamente dall'avventura attualmente visualizzata
+  inviteLink.value = `${window.location.origin}/sessione/${currentAdventure.value.id}`;
+  isInviteModalOpen.value = true;
 }
 function copyToClipboard() {
   navigator.clipboard.writeText(inviteLink.value)
@@ -1764,6 +1771,7 @@ function setImageFromUrl(item, fieldName, event) {
   background-color: #f8f8f8;
 }
 
+
 </style>
 
 <style>
@@ -1825,4 +1833,27 @@ function setImageFromUrl(item, fieldName, event) {
 .chat-player-btn:hover {
   opacity: 1;
 }
+
+
+/* Stili specifici per i box DM e Narrator */
+.dm-box {
+  background: #ffe4b5;
+  border: 2px solid #d2691e;
+  padding: 8px;
+  margin-bottom: 8px;
+  color: #6b3e00;
+}
+.narrato {
+  background: #f0f8ff;
+  border-left: 4px solid #4682b4;
+  padding: 8px;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+.titolo {
+  text-decoration: underline;
+  font-size: 1.2em;
+  margin-bottom: 4px;
+}
+
 </style>

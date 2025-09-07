@@ -3,68 +3,77 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { auth, db } from '@/firebaseConfig'
-import { doc, onSnapshot, setDoc } from 'firebase/firestore'
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+} from 'firebase/firestore' // Import serverTimestamp
 import { useToast } from 'vue-toastification'
 
 export const useDiceStore = defineStore('dice', () => {
   const diceHistory = ref([])
-  const rollerType = ref('Giocatore') // La tua funzionalità viene mantenuta
+  const rollerType = ref('Giocatore') // Manteniamo la selezione DM/Giocatore
   const toast = useToast()
   let historyListener = null
 
-  // Si abbona alla cronologia dell'utente loggato
-  function subscribeToHistory() {
-    if (!auth.currentUser) return
+  // MODIFICATA: Ora accetta l'ID dell'avventura come argomento
+  function subscribeToHistory(adventureId) {
+    if (historyListener) {
+      historyListener() // Ferma l'ascoltatore precedente
+    }
 
-    const userId = auth.currentUser.uid
-    const docRef = doc(db, 'diceHistories', userId)
+    if (!adventureId) {
+      diceHistory.value = [] // Se non c'è avventura, la cronologia è vuota
+      return
+    }
 
-    historyListener = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        diceHistory.value = docSnap.data().history || []
-      } else {
-        diceHistory.value = []
-      }
+    // La query ora filtra i tiri per l'ID della sessione attiva
+    const q = query(
+      collection(db, 'diceRolls'),
+      where('sessionId', '==', adventureId),
+      orderBy('timestamp', 'desc'),
+    )
+    historyListener = onSnapshot(q, (snapshot) => {
+      diceHistory.value = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
     })
   }
 
-  // Pulisce tutto al logout
-  function clearStore() {
-    if (historyListener) {
-      historyListener()
-      historyListener = null
-    }
-    diceHistory.value = []
-  }
-
-  // Aggiunge un tiro e salva su Firestore
-  async function addRoll(sides, result, description = '') {
+  // MODIFICATA: Ora accetta l'ID dell'avventura (sessionId) come argomento
+  async function addRoll(sides, result, description = '', sessionId) {
     if (!auth.currentUser) return
+
+    // Il controllo ora viene fatto nel componente, ma lo teniamo per sicurezza
+    if (!sessionId) {
+      toast.error('Nessuna sessione attiva per salvare il tiro!')
+      return
+    }
 
     const newRoll = {
       result,
       sides,
       description,
-      id: Date.now(),
-      roller: rollerType.value, // Manteniamo il tipo di tiratore
+      roller: rollerType.value,
+      userId: auth.currentUser.uid,
+      userName: auth.currentUser.email || 'Utente', // Usiamo email come fallback
+      timestamp: serverTimestamp(), // Usiamo il timestamp del server per un ordine corretto
+      sessionId: sessionId, // L'ID dell'avventura a cui appartiene il tiro
     }
 
-    const updatedHistory = [newRoll, ...diceHistory.value]
-
-    if (updatedHistory.length > 50) {
-      updatedHistory.pop()
-    }
-
-    diceHistory.value = updatedHistory // Aggiorna subito la UI
-
-    const userId = auth.currentUser.uid
-    const docRef = doc(db, 'diceHistories', userId)
     try {
-      await setDoc(docRef, { history: updatedHistory })
+      await addDoc(collection(db, 'diceRolls'), newRoll)
     } catch (error) {
-      console.error('Errore nel salvataggio della cronologia:', error)
+      console.error('Errore nel salvataggio del tiro:', error)
       toast.error('Impossibile salvare il tiro.')
     }
+  }
+
+  function clearStore() {
+    if (historyListener) historyListener()
+    diceHistory.value = []
   }
 
   return { diceHistory, rollerType, addRoll, subscribeToHistory, clearStore }
