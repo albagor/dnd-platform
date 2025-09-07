@@ -1,31 +1,30 @@
 import { useDiceStore } from '@/stores/diceStore'
 import { useToast } from 'vue-toastification'
-import { computed } from 'vue' // NUOVO: Importiamo computed
-import { useAdventureStore } from '@/stores/adventureStore' // NUOVO: Importiamo lo store del DM
-import { useSessionStore } from '@/stores/sessionStore' // NUOVO: Importiamo lo store del Giocatore
-import { storeToRefs } from 'pinia' // NUOVO: Necessario per la reattività
+import { computed } from 'vue'
+import { useAdventureStore } from '@/stores/adventureStore'
+import { useSessionStore } from '@/stores/sessionStore'
+import { storeToRefs } from 'pinia'
 
 export function useDiceRoller() {
   const diceStore = useDiceStore()
   const toast = useToast()
 
-  // --- NUOVO: Logica per trovare l'ID dell'avventura attiva ---
+  // --- Logica per trovare l'ID dell'avventura attiva ---
   const adventureStore = useAdventureStore()
   const sessionStore = useSessionStore()
   const { activeAdventureId: dmAdventureId } = storeToRefs(adventureStore)
   const { joinedSession: playerSession } = storeToRefs(sessionStore)
 
-  // Il nostro computed property "intelligente" che trova l'ID corretto
+  // Il computed property "intelligente" che trova l'ID corretto
   const activeAdventureId = computed(() => {
     if (dmAdventureId.value) return dmAdventureId.value
     if (playerSession.value && playerSession.value.adventureId)
       return playerSession.value.adventureId
     return null
   })
-  // --- FINE NUOVA LOGICA ---
 
   const makeCheck = (checkName, modifier) => {
-    // Se non c'è un'avventura attiva, non facciamo nulla (e avvisiamo)
+    // Controllo di sicurezza: se non c'è un'avventura attiva, avvisa e non fare nulla
     if (!activeAdventureId.value) {
       toast.error('Nessuna avventura attiva per registrare il tiro!')
       return
@@ -39,11 +38,10 @@ export function useDiceRoller() {
 
     toast.info(description, {
       timeout: 4000,
-      // ...altre opzioni del toast...
       icon: 'fas fa-dice-d20',
     })
 
-    // MODIFICATO: Passiamo l'ID dell'avventura attiva allo store
+    // Passa l'ID dell'avventura attiva allo store
     diceStore.addRoll(20, total, description, activeAdventureId.value)
   }
 

@@ -1,19 +1,33 @@
 import { useDiceStore } from '@/stores/diceStore'
 import { useToast } from 'vue-toastification'
-import { toRefs } from 'vue' // Importiamo toRefs
+import { toRefs, computed } from 'vue' // Aggiungi 'computed'
+import { useAdventureStore } from '@/stores/adventureStore' // NUOVO
+import { useSessionStore } from '@/stores/sessionStore' // NUOVO
+import { storeToRefs } from 'pinia' // NUOVO
 
-// La funzione ora accetta l'intero oggetto props
 export function useCombat(props) {
-  // Usiamo toRefs per mantenere la reattività delle props
   const { character, abilityModifiers, proficiencyBonus } = toRefs(props)
 
   const diceStore = useDiceStore()
   const toast = useToast()
 
+  // --- NUOVO: Logica per trovare l'ID dell'avventura attiva ---
+  const adventureStore = useAdventureStore()
+  const sessionStore = useSessionStore()
+  const { activeAdventureId: dmAdventureId } = storeToRefs(adventureStore)
+  const { joinedSession: playerSession } = storeToRefs(sessionStore)
+
+  const activeAdventureId = computed(() => {
+    if (dmAdventureId.value) return dmAdventureId.value
+    if (playerSession.value && playerSession.value.adventureId)
+      return playerSession.value.adventureId
+    return null
+  })
+  // --- FINE NUOVA LOGICA ---
+
   const getClassLevel = (className) =>
     character.value.header.classes.find((c) => c.name === className)?.level || 0
 
-  // Determina il bonus ai danni dell'ira del barbaro
   const getRageDamageBonus = () => {
     const level = getClassLevel('Barbaro')
     if (!character.value.combat.isRaging || level === 0) return 0
@@ -22,7 +36,6 @@ export function useCombat(props) {
     return 4
   }
 
-  // Determina il dado di danno delle Arti Marziali del monaco
   const getMonkMartialArtsDie = () => {
     const level = getClassLevel('Monaco')
     if (level === 0) return '1d4'
@@ -40,7 +53,6 @@ export function useCombat(props) {
 
   const getToHitBonus = (weapon) => {
     const enhancementBonus = weapon.enhancementBonus || 0
-    // Ora usiamo i .value perché sono refs
     return (
       getAttackAbilityMod(weapon, abilityModifiers.value) +
       proficiencyBonus.value +
@@ -53,11 +65,9 @@ export function useCombat(props) {
     const enhancementBonus = weapon.enhancementBonus || 0
     let rageBonus = 0
 
-    // Aggiungi il bonus dell'ira solo se l'attacco usa Forza
     if (character.value.combat.isRaging && abilityMod === abilityModifiers.value.strength) {
       rageBonus = getRageDamageBonus()
     }
-
     return abilityMod + enhancementBonus + rageBonus
   }
 
@@ -73,16 +83,28 @@ export function useCombat(props) {
   }
 
   const makeAttackRoll = (weapon) => {
+    // MODIFICATO: Aggiunto controllo sull'avventura attiva
+    if (!activeAdventureId.value) {
+      toast.error('Nessuna avventura attiva per registrare il tiro!')
+      return
+    }
     const txcBonus = getToHitBonus(weapon)
     const d20Result = Math.floor(Math.random() * 20) + 1
     const total = d20Result + txcBonus
     const description = `TxC ${weapon.name}: ${total} (d20: ${d20Result} + ${txcBonus})`
-    diceStore.addRoll(20, total, description)
+
+    // MODIFICATO: Passiamo l'ID dell'avventura allo store
+    diceStore.addRoll(20, total, description, activeAdventureId.value)
     toast.info(description)
     if (weapon.ammunition > 0) weapon.ammunition--
   }
 
   const makeDamageRoll = (weapon) => {
+    // MODIFICATO: Aggiunto controllo sull'avventura attiva
+    if (!activeAdventureId.value) {
+      toast.error('Nessuna avventura attiva per registrare il tiro!')
+      return
+    }
     const damageBonus = getDamageBonus(weapon)
     const damageDie = getWeaponDamageDie(weapon)
     const [diceCount, diceSides] = damageDie.split('d').map(Number)
@@ -92,7 +114,9 @@ export function useCombat(props) {
     }
     const total = diceResult + damageBonus
     const description = `Danno ${weapon.name}: ${total} (${damageDie}: ${diceResult} + ${damageBonus})`
-    diceStore.addRoll(diceSides, total, description)
+
+    // MODIFICATO: Passiamo l'ID dell'avventura allo store
+    diceStore.addRoll(diceSides, total, description, activeAdventureId.value)
     toast.success(description)
   }
 

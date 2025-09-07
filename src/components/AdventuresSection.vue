@@ -209,17 +209,27 @@ function showDetails(event) {
     }
   }
 }
-function handleShowDetails(item) {
-  if (!item) return
-  const dataToShow = item.monsterData || item
-  if (dataToShow.is_pc) {
-    openPlayerSheet(dataToShow.id)
-  } else if (dataToShow.ability_scores) {
-    selectedMonsterForModal.value = dataToShow
-    isMonsterDetailsModalOpen.value = true
+function handleShowDetails(combatant) {
+  if (!combatant) return;
+
+  // NUOVA LOGICA:
+  // 1. PRIMA controlliamo se il partecipante è un PG.
+  // La proprietà 'is_pc' si trova direttamente sull'oggetto 'combatant'.
+  if (combatant.is_pc) {
+    // Se è un PG, usiamo il suo ID per aprire la scheda e ci fermiamo qui.
+    openPlayerSheet(combatant.id);
+    return;
+  }
+
+  // 2. Se non è un PG, allora procediamo con la logica per mostri e oggetti.
+  const dataToShow = combatant.monsterData || combatant;
+  if (dataToShow.ability_scores) {
+    selectedMonsterForModal.value = dataToShow;
+    isMonsterDetailsModalOpen.value = true;
   } else {
-    selectedItemForModal.value = dataToShow
-    isItemDetailsModalOpen.value = true
+    // Questo caso gestisce oggetti generici che potrebbero non essere mostri
+    selectedItemForModal.value = dataToShow;
+    isItemDetailsModalOpen.value = true;
   }
 }
 
@@ -392,7 +402,8 @@ function toggleChapter(chapterId) {
   expandedChapterId.value = expandedChapterId.value === chapterId ? null : chapterId
 }
 function openPlayerSheet(playerId) {
-  router.push({ path: '/', query: { charId: playerId } })
+  const routeData = router.resolve({ path: '/', query: { charId: playerId } });
+  window.open(routeData.href, '_blank');
 }
 function addItemToSection(sectionId) {
   if (!currentAdventure.value) return

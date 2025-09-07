@@ -230,7 +230,7 @@ const defaultCharacter = {
     manualLanguages: [],
     manualOther: [], // <-- AGGIUNGI QUESTA RIGA
   },
-  personality: { traits: '', ideals: '', bonds: '', flaws: '' },
+  personality: { traits: '', ideals: '', bonds: '', flaws: '', backgroundStory: '' },
   features: [],
   equipment: {
     weapons: [],
@@ -1032,6 +1032,15 @@ function removeSpell(level, spellToRemove) {
           </div>
           <div class="grid-item full-width">
             <label>Difetti</label> <textarea v-model="character.personality.flaws"></textarea>
+          </div>
+
+          <div class="grid-item full-width">
+            <label>Background Personale</label>
+            <textarea
+              v-model="character.personality.backgroundStory"
+              placeholder="Scrivi qui la storia del tuo personaggio..."
+              rows="8"
+            ></textarea>
           </div>
         </div>
       </div>

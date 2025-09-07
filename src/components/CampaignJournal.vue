@@ -1,23 +1,33 @@
 <script setup>
-import { ref, onUnmounted, computed, watch } from 'vue' // Aggiungi 'computed' e 'watch'
+import { ref, onUnmounted, computed, watch } from 'vue'
 import { db, auth } from '@/firebaseConfig'
-import { collection, query, onSnapshot, addDoc, orderBy, serverTimestamp } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  onSnapshot,
+  addDoc,
+  orderBy,
+  serverTimestamp,
+  doc,
+  deleteDoc,
+} from 'firebase/firestore'
 import { useAdventureStore } from '@/stores/adventureStore'
-import { useSessionStore } from '@/stores/sessionStore' // Importa lo store del giocatore
+import { useSessionStore } from '@/stores/sessionStore'
+import { useUserStore } from '@/stores/userStore' // Import per sapere se l'utente è DM
 import { storeToRefs } from 'pinia'
 import { useToast } from 'vue-toastification'
 
 const adventureStore = useAdventureStore()
-const sessionStore = useSessionStore() // Attiva lo store del giocatore
+const sessionStore = useSessionStore()
+const userStore = useUserStore() // Assicuriamoci che questa riga sia presente e corretta
 const toast = useToast()
 
 const { activeAdventureId: dmAdventureId } = storeToRefs(adventureStore)
 const { joinedSession: playerSession } = storeToRefs(sessionStore)
 
-// NUOVO: Un computed property che trova l'ID corretto, che tu sia DM o Giocatore
 const activeId = computed(() => {
-  if (dmAdventureId.value) return dmAdventureId.value // Priorità al DM
-  if (playerSession.value) return playerSession.value.adventureId // Fallback sul giocatore
+  if (dmAdventureId.value) return dmAdventureId.value
+  if (playerSession.value) return playerSession.value.adventureId
   return null
 })
 
@@ -32,7 +42,6 @@ function cleanupListener() {
   }
 }
 
-// Ora il watch osserva il nostro ID unificato
 watch(
   activeId,
   (newId) => {
@@ -42,6 +51,7 @@ watch(
     if (newId) {
       const journalRef = collection(db, 'adventures', newId, 'journal')
       const q = query(journalRef, orderBy('timestamp', 'desc'))
+
       journalListener = onSnapshot(
         q,
         (snapshot) => {
@@ -63,7 +73,6 @@ onUnmounted(() => {
 
 async function addEntry() {
   if (!newEntryText.value.trim() || !activeId.value) return
-
   const journalRef = collection(db, 'adventures', activeId.value, 'journal')
   try {
     await addDoc(journalRef, {
@@ -77,6 +86,20 @@ async function addEntry() {
   } catch (error) {
     toast.error("Errore nell'aggiungere la voce.")
     console.error('Errore:', error)
+  }
+}
+
+async function deleteEntry(entryId) {
+  if (!activeId.value) return
+  if (confirm('Sei sicuro di voler eliminare questa voce del diario?')) {
+    const entryRef = doc(db, 'adventures', activeId.value, 'journal', entryId)
+    try {
+      await deleteDoc(entryRef)
+      toast.success('Voce del diario eliminata.')
+    } catch (error) {
+      console.error("Errore durante l'eliminazione:", error)
+      toast.error('Impossibile eliminare la voce.')
+    }
   }
 }
 
@@ -101,7 +124,16 @@ function formatDate(timestamp) {
       <div class="entries-list">
         <h3>Voci Precedenti</h3>
         <div v-for="entry in entries" :key="entry.id" class="entry-card box">
-          <p class="entry-text">{{ entry.text }}</p>
+          <button
+            v-if="userStore.isDM"
+            @click="deleteEntry(entry.id)"
+            class="delete-entry-btn"
+            title="Elimina Voce"
+          >
+            ×
+          </button>
+
+          <p class="entry-text">{{ entry.content }}</p>
           <div class="entry-meta">
             <span><strong>Autore:</strong> {{ entry.author }}</span>
             <span><strong>Data:</strong> {{ formatDate(entry.timestamp) }}</span>
@@ -171,6 +203,24 @@ h1 {
 }
 .entry-card {
   margin-bottom: 1rem;
+  position: relative; /* Necessario per posizionare il pulsante */
+}
+.delete-entry-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0 5px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.delete-entry-btn:hover {
+  color: #e74c3c;
 }
 .entry-text {
   white-space: pre-wrap;

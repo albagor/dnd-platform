@@ -93,6 +93,9 @@ const formatText = (dataBlock) => {
           >,
           <span class="alignment">{{ monster.alignment }}</span>
         </p>
+        <div v-if="monster.description" class="details-section description-block">
+          <p v-html="monster.description.replace(/\n/g, '<br>')"></p>
+        </div>
         <hr class="separator" />
         <div class="monster-stats">
           <p>
@@ -278,6 +281,13 @@ const formatText = (dataBlock) => {
   padding: 10px;
   border-radius: 5px;
   border-left: 4px solid #f1c40f;
+  font-style: italic;
+}
+.description-block {
+  background-color: #f3f0e9;
+  padding: 10px;
+  border-radius: 5px;
+  border-left: 3px solid #bca789;
   font-style: italic;
 }
 </style>
