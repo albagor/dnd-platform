@@ -1,131 +1,80 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-
-import { useRoute, onBeforeRouteUpdate } from 'vue-router'
-
+import { useRoute, onBeforeRouteUpdate, useRouter } from 'vue-router'
 import { dndClasses, dndRaces, dndHitDice } from '../data/dndData.js'
-
 import { dndDefensiveItems } from '@/data/dndDefensiveItems.js'
-
 import { dndRacialTraits } from '@/data/dndRacialTraits.js'
-
 import { dndClassFeatures } from '@/data/dndClassFeatures.js'
-
 import { dndClassProficiencies } from '@/data/dndProficiencies.js'
-
 import { dndSubclasses } from '@/data/dndSubclasses.js'
-
 import { dndSpells } from '@/data/dndSpells.js'
-
 import { useDiceRoller } from '@/composables/useDiceRoller.js'
-
-// import SpellSheet from './SpellSheet.vue' // non usato
-
 import CombatSection from './CombatSection.vue'
-
 import FeaturesAndTraits from './FeaturesAndTraits.vue'
-
 import InventorySection from './InventorySection.vue'
-
 import Grimoire from './Grimoire.vue'
-
 import { auth, db } from '@/firebaseConfig'
-
-import { doc, setDoc, onSnapshot } from 'firebase/firestore'
-
+import { doc, setDoc, onSnapshot, collection, addDoc, deleteDoc } from 'firebase/firestore'
 import { useToast } from 'vue-toastification'
-
 import { uploadImage } from '@/services/storageService.js'
-
 import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage'
-
-// Aggiungi questo import insieme agli altri
-
 import PrivateChat from './PrivateChat.vue'
-
 import { dndFeats } from '../data/dndFeats.js'
 
+const router = useRouter()
+const route = useRoute()
+const toast = useToast()
+let characterListener = null
+let sessionListener = null
 const isChatOpen = ref(false)
-
-const adventureInfo = ref(null) // NUOVO: Non più dati di prova, parte da null
-
+const adventureInfo = ref(null)
 const firebaseStorage = getStorage()
 
+// Resto delle tue variabili reattive e computed
 const abilityOrder = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma']
-
 const savingThrowOrder = [
   'strength',
-
   'dexterity',
-
   'constitution',
-
   'intelligence',
-
   'wisdom',
-
   'charisma',
 ]
 
-const route = useRoute()
-
-const toast = useToast()
-
-let characterListener = null
-
-let sessionListener = null // NUOVO: listener per la sessione
-
 const isAnagraficaOpen = ref(true)
-
 const isStatsOpen = ref(true)
-
 const isCombatOpen = ref(true)
-
 const isResourcesOpen = ref(true)
-
 const isSkillsOpen = ref(true)
-
 const isFeaturesOpen = ref(true)
-
-const isFeatsOpen = ref(true) // NUOVO: Variabile separata per i "Talenti"
-
+const isFeatsOpen = ref(true)
 const isSpecialSpellsOpen = ref(true)
-
 const isInventoryOpen = ref(true)
-
 const isCompanionsOpen = ref(true)
-
 const isSpellsOpen = ref(true)
-
 const isGrimoireOpen = ref(false)
-
 const isHpModalOpen = ref(false)
-
 const hpChangeAmount = ref(0)
-
 const hpChangeType = ref('damage')
-
 const isCustomDefenseModalOpen = ref(false)
-
 const newCustomDefensiveItem = ref({
   name: 'Oggetto Personalizzato',
-
   type: 'Leggera',
-
   ac: 10,
-
   maxDex: null,
-
   strReq: 0,
-
   weight: 0,
-
   category: 'Armatura',
-
   isEquipped: false,
 })
-
 const defensiveItemToAdd = ref(null)
+
+const props = defineProps({
+  id: {
+    type: String,
+    required: true,
+  },
+})
 
 // DATI STATICI
 
@@ -496,124 +445,131 @@ const defaultCharacter = {
 
   chosenFeats: [], // <-- AGGIUNGI QUESTA RIGA
 }
-
 const character = ref(JSON.parse(JSON.stringify(defaultCharacter)))
-
 const featToAdd = ref(null)
-
 const availableFeats = computed(() => {
   if (!character.value || !character.value.chosenFeats) return dndFeats
-
   const chosenNames = new Set(character.value.chosenFeats.map((feat) => feat.name))
-
   return dndFeats.filter((feat) => !chosenNames.has(feat.name))
 })
-
 function addFeat() {
   if (!featToAdd.value) return
-
   const featData = dndFeats.find((f) => f.name === featToAdd.value)
-
   if (featData) {
     if (!character.value.chosenFeats) {
       character.value.chosenFeats = []
     }
-
     character.value.chosenFeats.push(featData)
-
-    featToAdd.value = null // Resetta la selezione
+    featToAdd.value = null
   }
 }
-
 function removeFeat(index) {
   if (character.value && character.value.chosenFeats) {
     character.value.chosenFeats.splice(index, 1)
   }
 }
 
-// ------ SOLO GESTIONE REALTIME! ------
+// === INIZIO DEL CODICE CORRETTO ===
 
-function setupCharacterListener(userId) {
-  targetUserId = userId // <--- AGGIUNGI QUESTO!
-
+// Funzione principale che carica o inizializza la scheda in base all'ID della prop
+function setupCharacterListener() {
   if (characterListener) characterListener()
 
-  const docRef = doc(db, 'characterSheets', userId)
+  if (!props.id) {
+    console.error('Nessun ID fornito, impossibile caricare la scheda.')
+    return
+  }
 
-  characterListener = onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      character.value = { ...docSnap.data(), id: userId } // <--- sempre id giusto!
-    } else {
-      character.value = { ...JSON.parse(JSON.stringify(defaultCharacter)), id: userId }
+  // Se l'ID è "new", prepariamo una nuova scheda con l'ID del proprietario
+  if (props.id === 'new') {
+    console.log('Creazione di una nuova scheda temporanea per utente autenticato.')
+    character.value = {
+      ...JSON.parse(JSON.stringify(defaultCharacter)),
+      ownerId: auth.currentUser.uid,
     }
-  })
+    return
+  }
+
+  // Altrimenti, ci mettiamo in ascolto della scheda esistente
+  const docRef = doc(db, 'characterSheets', props.id)
+  characterListener = onSnapshot(
+    docRef,
+    (docSnap) => {
+      if (docSnap.exists()) {
+        character.value = { id: docSnap.id, ...docSnap.data() }
+        toast.success('Scheda personaggio caricata in tempo reale!')
+      } else {
+        console.error(`Documento con ID ${props.id} non trovato.`)
+        toast.error('Scheda non trovata. Torno alla selezione.')
+        router.push('/')
+      }
+    },
+    (error) => {
+      console.error('Errore nel listener di Firestore:', error)
+      toast.error('Errore nel caricamento della scheda.')
+    },
+  )
 }
 
+// onMounted e onBeforeRouteUpdate ora usano solo `setupCharacterListener()`
 onMounted(() => {
-  const targetUserId = route.query.charId || auth.currentUser?.uid
-
-  if (targetUserId) {
-    setupCharacterListener(targetUserId)
-  } // NUOVO: Mettiamoci in ascolto del documento della sessione attiva
-
+  setupCharacterListener()
   const sessionDocRef = doc(db, 'sessions', 'active_session')
-
   sessionListener = onSnapshot(sessionDocRef, (docSnap) => {
     if (docSnap.exists()) {
-      // Se esiste una sessione, salviamo le informazioni
-
       adventureInfo.value = {
         adventureId: docSnap.data().adventureId,
-
         dmId: docSnap.data().dmId,
       }
     } else {
-      // Se non esiste, la chat non sarà disponibile
-
       adventureInfo.value = null
     }
   })
 })
 
 onBeforeRouteUpdate((to, from) => {
-  const newTargetId = to.query.charId || auth.currentUser?.uid
-
-  const oldTargetId = from.query.charId || auth.currentUser?.uid
-
-  if (newTargetId && newTargetId !== oldTargetId) {
-    setupCharacterListener(newTargetId)
+  if (to.params.id !== from.params.id) {
+    setupCharacterListener()
   }
 })
 
 onUnmounted(() => {
-  if (characterListener) characterListener() // Interrompe l'ascolto quando si lascia la pagina
-
-  if (sessionListener) sessionListener() // NUOVO: Interrompiamo l'ascolto della sessione
+  if (characterListener) characterListener()
+  if (sessionListener) sessionListener()
 })
 
-// --- SOLO UN WATCHER DI SALVATAGGIO, SEMPRE SU character.value.id (che è il player in ascolto) ---
-
+// Watcher corretto per gestire il salvataggio o la creazione
 let debounceTimer = null
-
 watch(
   character,
-
-  (newData) => {
-    if (!targetUserId) return
-
+  async (newData) => {
+    if (
+      !props.id ||
+      (props.id === 'new' && (!newData.header.name || newData.header.name.trim() === ''))
+    ) {
+      return
+    }
     clearTimeout(debounceTimer)
-
     debounceTimer = setTimeout(async () => {
-      const docRef = doc(db, 'characterSheets', targetUserId) // <--- usa targetUserId!
-
       try {
-        await setDoc(docRef, JSON.parse(JSON.stringify(newData)))
+        if (props.id === 'new') {
+          const newDocRef = await addDoc(collection(db, 'characterSheets'), {
+            ...newData,
+            ownerId: auth.currentUser.uid,
+          })
+          toast.success('Nuovo personaggio creato!')
+          router.replace({ name: 'scheda', params: { id: newDocRef.id } })
+        } else {
+          const docRef = doc(db, 'characterSheets', props.id)
+          await setDoc(docRef, newData, { merge: true })
+          toast.success('Scheda salvata!')
+        }
       } catch (error) {
-        toast.error('Errore nel salvataggio della scheda.')
+        console.error('Errore durante il salvataggio della scheda:', error)
+        toast.error('Errore nel salvataggio della scheda. Controlla i permessi di scrittura.')
       }
     }, 1500)
   },
-
   { deep: true },
 )
 
@@ -646,8 +602,6 @@ async function loadCharacterSheet(userId) {
 // LOGICA FIREBASE
 
 // FUNZIONI E COMPUTED PER RISORSE DI CLASSE
-
-let targetUserId = null
 
 const getClassLevel = (className) => {
   const charClass = character.value.header.classes.find((c) => c.name === className)

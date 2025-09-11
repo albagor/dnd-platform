@@ -1,19 +1,14 @@
 // src/data/dndRacialTraits.js
-
 export const dndRacialTraits = {
   Aarakocra: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Destrezza aumenta di 2 e la tua Saggezza aumenta di 1.',
-      },
       {
         name: 'Volo',
         description:
           "Hai una velocità di volo di 15 metri. Non puoi volare se indossi un'armatura media o pesante.",
       },
       {
-        name: 'Talons',
+        name: 'Artigli',
         description:
           "I tuoi artigli sono armi naturali che puoi usare per i colpi senz'armi. Se colpisci, infliggi 1d4 danni taglienti.",
       },
@@ -22,10 +17,6 @@ export const dndRacialTraits = {
   },
   Aasimar: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'Il tuo Carisma aumenta di 2.',
-      },
       {
         name: 'Scurovisione',
         description:
@@ -44,50 +35,66 @@ export const dndRacialTraits = {
         name: 'Portatore di Luce',
         description:
           "Conosci il trucchetto 'luce'. Il Carisma è la tua caratteristica da incantatore per esso.",
+        spells: [{ name: 'Luce', source: 'Aasimar' }],
+      },
+      {
+        name: 'Rivelazione Celestiale',
+        description:
+          "Al 3° livello, puoi usare un'azione bonus per scatenare un'energia divina per 1 minuto. Una volta per riposo lungo. Scegli una forma (Protettore, Flagello, Caduto).",
       },
     ],
     subraces: {
       Protettore: [
         {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Saggezza aumenta di 1.',
-        },
-        {
-          name: 'Sudario Radiante',
+          name: 'Anima Radiosa',
           description:
-            "Al 3° livello, puoi usare la tua azione per scatenare un'energia divina. Per 1 minuto, emetti luce e ottieni una velocità di volo di 9m. Una volta per turno, puoi infliggere danni radianti extra pari al tuo livello.",
+            'Durante la Rivelazione, ottieni ali spettrali con velocità di volo di 9m e una volta per turno puoi infliggere danni radianti extra pari al tuo livello.',
         },
       ],
       Flagello: [
         {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Costituzione aumenta di 1.',
-        },
-        {
-          name: 'Sudario Radiante',
+          name: 'Consumo Radioso',
           description:
-            "Al 3° livello, puoi usare la tua azione per scatenare un'energia divina. Emetti luce e, alla fine di ogni tuo turno, tu e le creature vicine subite danni radianti pari a metà del tuo livello.",
+            'Durante la Rivelazione, emetti luce e alla fine di ogni tuo turno, tu e le creature vicine subite danni radianti pari a metà del tuo livello.',
         },
       ],
       Caduto: [
         {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Forza aumenta di 1.',
-        },
-        {
           name: 'Sudario Necrotico',
           description:
-            "Al 3° livello, puoi usare la tua azione per scatenare un'energia divina. Le creature vicine devono superare un TS su Carisma o essere spaventate. Una volta per turno, puoi infliggere danni necrotici extra pari al tuo livello.",
+            'Durante la Rivelazione, le creature vicine devono superare un TS su Carisma o essere spaventate. Una volta per turno, puoi infliggere danni necrotici extra pari al tuo livello.',
         },
       ],
     },
   },
-  Cangiante: {
+  Bugbear: {
     base: [
       {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'Il tuo Carisma aumenta di 2, e un altro punteggio a tua scelta aumenta di 1.',
+        name: 'Scurovisione',
+        description:
+          "Puoi vedere in luce fioca entro 18 metri come se fosse luce intensa, e nell'oscurità come se fosse luce fioca.",
       },
+      {
+        name: 'Arti Allungati',
+        description:
+          'Quando effettui un attacco in mischia nel tuo turno, la tua portata è superiore di 1,5 metri.',
+      },
+      {
+        name: 'Costituzione Poderosa',
+        description:
+          'Sei considerato di una taglia più grande per determinare la tua capacità di trasporto.',
+      },
+      { name: 'Furtivo', description: "Hai competenza nell'abilità Furtività." },
+      {
+        name: 'Attacco a Sorpresa',
+        description:
+          "Se colpisci una creatura con un tiro per colpire che ha sorpresa, l'attacco infligge 2d6 danni extra.",
+      },
+    ],
+    subraces: {},
+  },
+  Cangiante: {
+    base: [
       {
         name: 'Mutaforma',
         description:
@@ -104,11 +111,6 @@ export const dndRacialTraits = {
   Centauro: {
     base: [
       {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Forza aumenta di 2 e la tua Saggezza aumenta di 1.',
-      },
-      { name: 'Fey', description: 'Il tuo tipo di creatura è fatato, invece che umanoide.' },
-      {
         name: 'Carica',
         description:
           'Se ti muovi di almeno 9 metri in linea retta verso un bersaglio e poi lo colpisci con un attacco con arma da mischia nello stesso turno, puoi immediatamente effettuare un attacco bonus con i tuoi zoccoli.',
@@ -116,26 +118,22 @@ export const dndRacialTraits = {
       {
         name: 'Zoccoli',
         description:
-          'I tuoi zoccoli sono armi naturali da mischia, con cui sei competente. Infliggono 1d4 + mod Forza danni contondenti.',
+          'I tuoi zoccoli sono armi naturali da mischia, con cui sei competente. Infliggono 1d6 + mod Forza danni contondenti.',
       },
       {
-        name: 'Equino',
+        name: 'Costituzione Equina',
         description:
-          'Sei considerato di una taglia più grande per determinare la tua capacità di trasporto. Inoltre, scalare è difficile per te.',
+          'Sei considerato di una taglia più grande per determinare la tua capacità di trasporto.',
       },
     ],
     subraces: [],
   },
-  Draconide: {
+  Dragonide: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Forza aumenta di 2 e il tuo Carisma aumenta di 1.',
-      },
       {
         name: 'Discendenza Draconica',
         description:
-          'Scegli un tipo di drago. Questo determina il tipo di danno e la forma della tua arma a soffio, e la tua resistenza al danno.',
+          'Scegli un tipo di drago. Questo determina il tipo di danno della tua arma a soffio e della tua resistenza.',
       },
       {
         name: 'Arma a Soffio',
@@ -151,10 +149,6 @@ export const dndRacialTraits = {
   },
   Nano: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Costituzione aumenta di 2.',
-      },
       {
         name: 'Scurovisione',
         description:
@@ -182,17 +176,9 @@ export const dndRacialTraits = {
     ],
     subraces: {
       'delle Colline': [
-        {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Saggezza aumenta di 1.',
-        },
         { name: 'Tenacia Nanica', description: 'Il tuo massimo dei PF aumenta di 1 per livello.' },
       ],
       'delle Montagne': [
-        {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Forza aumenta di 2.',
-        },
         {
           name: 'Addestramento nelle Armature Naniche',
           description: 'Competenza nelle armature leggere e medie.',
@@ -202,10 +188,6 @@ export const dndRacialTraits = {
   },
   Elfo: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Destrezza aumenta di 2.',
-      },
       {
         name: 'Scurovisione',
         description:
@@ -219,11 +201,18 @@ export const dndRacialTraits = {
       { name: 'Trance', description: 'Mediti per 4 ore invece di dormire per 8.' },
     ],
     subraces: {
-      'dei Boschi': [
+      'Alti Elfi': [
         {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Saggezza aumenta di 1.',
+          name: 'Addestramento nelle Armi Elfiche',
+          description: 'Competenza con spada lunga, spada corta, arco corto e arco lungo.',
         },
+        {
+          name: 'Trucchetto',
+          description: 'Conosci un trucchetto dalla lista del mago (usa Intelligenza).',
+          spells: [{ name: 'Trucchetto da Mago (a scelta)', source: 'Alto Elfo' }],
+        },
+      ],
+      'Elfi dei Boschi': [
         {
           name: 'Addestramento nelle Armi Elfiche',
           description: 'Competenza con spada lunga, spada corta, arco corto e arco lungo.',
@@ -234,25 +223,7 @@ export const dndRacialTraits = {
           description: 'Puoi tentare di nasconderti anche se sei solo leggermente oscurato.',
         },
       ],
-      Alto: [
-        {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Intelligenza aumenta di 1.',
-        },
-        {
-          name: 'Addestramento nelle Armi Elfiche',
-          description: 'Competenza con spada lunga, spada corta, arco corto e arco lungo.',
-        },
-        {
-          name: 'Trucchetto',
-          description: 'Conosci un trucchetto dalla lista del mago (usa Intelligenza).',
-        },
-      ],
-      'Drow (Oscuro)': [
-        {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'Il tuo Carisma aumenta di 1.',
-        },
+      Drow: [
         {
           name: 'Scurovisione Superiore',
           description: 'La tua Scurovisione ha un raggio di 36 metri.',
@@ -265,30 +236,32 @@ export const dndRacialTraits = {
         {
           name: 'Magia Drow',
           description:
-            "Conosci il trucchetto 'luci danzanti'. Al 3° livello, puoi lanciare 'luminescenza' una volta al giorno. Al 5° livello, 'oscurità' una volta al giorno (usa Carisma).",
+            "Conosci il trucchetto 'luci danzanti'. Al 3° livello, puoi lanciare 'luminescenza' una volta al giorno. Al 5°, 'oscurità' una volta al giorno (usa Carisma).",
+          spells: [
+            { name: 'Luci Danzanti', source: 'Drow' },
+            { name: 'Luminescenza', source: 'Drow (Liv 3)' },
+            { name: 'Oscurità', source: 'Drow (Liv 5)' },
+          ],
         },
       ],
       'Shadar-kai': [
-        {
-          name: 'Resistenza Necrotica',
-          description: 'Ottieni resistenza ai danni necrotici.',
-        },
+        { name: 'Resistenza Necrotica', description: 'Ottieni resistenza ai danni necrotici.' },
         {
           name: 'Benedizione della Regina Corvo',
           description:
-            'Come azione bonus, puoi teletrasportarti magicamente fino a 9 metri in un punto libero che puoi vedere. Puoi usare questo tratto un numero di volte pari al tuo bonus di competenza, e recuperi tutti gli usi dopo un riposo lungo. A partire dal 3° livello, ottieni anche resistenza a tutti i danni per un turno dopo aver usato questo teletrasporto.',
+            "Come azione bonus, puoi teletrasportarti fino a 9 metri. Puoi usarlo un numero di volte pari al tuo bonus di competenza per riposo lungo. Dal 3° livello, ottieni resistenza a tutti i danni fino all'inizio del tuo prossimo turno dopo il teletrasporto.",
         },
       ],
       Eladrin: [
         {
           name: 'Passo Fatato',
           description:
-            'Come azione bonus, puoi teletrasportarti magicamente fino a 9 metri in un punto libero che puoi vedere. Puoi usare questo tratto un numero di volte pari al tuo bonus di competenza, e recuperi tutti gli usi dopo un riposo lungo.',
+            'Come azione bonus, puoi teletrasportarti fino a 9 metri. Puoi usarlo un numero di volte pari al tuo bonus di competenza per riposo lungo.',
         },
         {
           name: 'Effetto Aggiuntivo del Passo Fatato',
           description:
-            "A partire dal 3° livello, subito dopo aver usato il Passo Fatato, puoi forzare le creature entro 1,5 metri da te a effettuare un tiro salvezza basato sulla tua caratteristica da incantatore. L'effetto dipende dalla tua stagione (es. Charme per l'Estate, Paura per l'Inverno).",
+            "A partire dal 3° livello, subito dopo aver usato il Passo Fatato, puoi emanare un effetto basato sulla tua stagione (es. Charme per l'Estate, Paura per l'Inverno).",
         },
       ],
     },
@@ -296,13 +269,13 @@ export const dndRacialTraits = {
   Firbolg: {
     base: [
       {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Saggezza aumenta di 2 e la tua Forza aumenta di 1.',
-      },
-      {
         name: 'Magia Firbolg',
         description:
           "Puoi lanciare 'individuazione del magico' e 'camuffare se stesso' una volta ciascuno per riposo breve/lungo.",
+        spells: [
+          { name: 'Individuazione del Magico', source: 'Firbolg' },
+          { name: 'Camuffare Se Stesso', source: 'Firbolg' },
+        ],
       },
       {
         name: 'Passo Nascosto',
@@ -322,33 +295,19 @@ export const dndRacialTraits = {
     subraces: [],
   },
   Genasi: {
-    base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Costituzione aumenta di 2.',
-      },
-    ],
+    base: [],
     subraces: {
-      "dell'Aria": [
-        {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Destrezza aumenta di 1.',
-        },
-        {
-          name: 'Senza Respiro',
-          description: 'Puoi trattenere il fiato indefinitamente finché non sei inabile.',
-        },
+      "d'Aria": [
+        { name: 'Scurovisione', description: 'Puoi vedere al buio entro 18 metri.' },
+        { name: 'Senza Respiro', description: 'Puoi trattenere il fiato indefinitamente.' },
         {
           name: 'Mescolarsi al Vento',
-          description:
-            "Puoi lanciare l'incantesimo 'levitazione' una volta per riposo lungo (usa Costituzione).",
+          description: "Puoi lanciare l'incantesimo 'levitazione' una volta per riposo lungo.",
+          spells: [{ name: 'Levitazione', source: 'Genasi (Aria)' }],
         },
       ],
-      'della Terra': [
-        {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Forza aumenta di 1.',
-        },
+      'di Terra': [
+        { name: 'Scurovisione', description: 'Puoi vedere al buio entro 18 metri.' },
         {
           name: 'Camminata Terrestre',
           description:
@@ -357,51 +316,44 @@ export const dndRacialTraits = {
         {
           name: 'Passare senza Tracce',
           description:
-            "Puoi lanciare l'incantesimo 'passare senza tracce' una volta per riposo lungo (usa Costituzione).",
+            "Puoi lanciare l'incantesimo 'passare senza tracce' una volta per riposo lungo.",
+          spells: [{ name: 'Passare senza Tracce', source: 'Genasi (Terra)' }],
         },
       ],
       'del Fuoco': [
-        {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Intelligenza aumenta di 1.',
-        },
         { name: 'Scurovisione', description: 'Raggio di 18 metri.' },
         { name: 'Resistenza al Fuoco', description: 'Hai resistenza ai danni da fuoco.' },
         {
-          name: 'Raggiungere le Fiamme',
+          name: 'Magia del Fuoco',
           description:
-            "Conosci il trucchetto 'produrre fiamma'. Al 3° livello, puoi lanciare 'mani brucianti' una volta per riposo lungo (usa Costituzione).",
+            "Conosci il trucchetto 'produrre fiamma'. Al 3° livello, puoi lanciare 'mani brucianti' una volta per riposo lungo.",
+          spells: [
+            { name: 'Produrre Fiamma', source: 'Genasi (Fuoco)' },
+            { name: 'Mani Brucianti', source: 'Genasi (Fuoco) (Liv 3)' },
+          ],
         },
       ],
-      "dell'Acqua": [
-        {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Saggezza aumenta di 1.',
-        },
+      "d'Acqua": [
+        { name: 'Scurovisione', description: 'Puoi vedere al buio entro 18 metri.' },
         { name: "Resistenza all'Acido", description: 'Hai resistenza ai danni da acido.' },
         { name: 'Anfibio', description: 'Puoi respirare aria e acqua.' },
         { name: 'Velocità di Nuoto', description: 'Hai una velocità di nuoto di 9 metri.' },
         {
-          name: "Richiamare l'Onda",
+          name: "Magia dell'Acqua",
           description:
-            "Conosci il trucchetto 'creare o distruggere acqua'. Al 3° livello, puoi lanciare 'creare o distruggere acqua' come incantesimo di 2° livello una volta per riposo lungo (usa Costituzione).",
+            "Conosci il trucchetto 'creare o distruggere acqua'. Al 3° livello, puoi lanciare 'camminare sull\'acqua'.",
+          spells: [
+            { name: 'Creare o Distruggere Acqua', source: 'Genasi (Acqua)' },
+            { name: "Camminare sull'Acqua", source: 'Genasi (Acqua) (Liv 3)' },
+          ],
         },
       ],
     },
   },
   Gith: {
-    base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Intelligenza aumenta di 1.',
-      },
-    ],
+    base: [{ name: 'Scurovisione', description: 'Puoi vedere al buio entro 18 metri.' }],
     subraces: {
       Githyanki: [
-        {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Forza aumenta di 2.',
-        },
         {
           name: 'Conoscenza Decadente',
           description: "Ottieni competenza in un'abilità o strumento a tua scelta.",
@@ -410,13 +362,14 @@ export const dndRacialTraits = {
           name: 'Psionica Githyanki',
           description:
             "Conosci il trucchetto 'mano magica'. Al 3° livello, 'saltare'. Al 5°, 'passo velato'. (1 volta per riposo lungo, usa Intelligenza).",
+          spells: [
+            { name: 'Mano Magica', source: 'Githyanki' },
+            { name: 'Saltare', source: 'Githyanki (Liv 3)' },
+            { name: 'Passo Velato', source: 'Githyanki (Liv 5)' },
+          ],
         },
       ],
       Githzerai: [
-        {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Saggezza aumenta di 2.',
-        },
         {
           name: 'Disciplina Mentale',
           description: "Vantaggio ai TS contro l'essere affascinato o spaventato.",
@@ -425,17 +378,17 @@ export const dndRacialTraits = {
           name: 'Psionica Githzerai',
           description:
             "Conosci il trucchetto 'mano magica'. Al 3° livello, 'scudo'. Al 5°, 'individuazione dei pensieri'. (1 volta per riposo lungo, usa Saggezza).",
+          spells: [
+            { name: 'Mano Magica', source: 'Githzerai' },
+            { name: 'Scudo', source: 'Githzerai (Liv 3)' },
+            { name: 'Individuazione dei Pensieri', source: 'Githzerai (Liv 5)' },
+          ],
         },
       ],
     },
   },
-  // Incolla questo codice subito dopo il codice della Parte 1, nello stesso file.
   Gnomo: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Intelligenza aumenta di 2.',
-      },
       {
         name: 'Scurovisione',
         description:
@@ -450,12 +403,9 @@ export const dndRacialTraits = {
     subraces: {
       'delle Foreste': [
         {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Destrezza aumenta di 1.',
-        },
-        {
           name: 'Illusionista Nato',
           description: "Conosci il trucchetto 'illusione minore' (usa Intelligenza).",
+          spells: [{ name: 'Illusione Minore', source: 'Gnomo delle Foreste' }],
         },
         {
           name: 'Parlare con le Piccole Bestie',
@@ -464,10 +414,6 @@ export const dndRacialTraits = {
       ],
       'delle Rocce': [
         {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Costituzione aumenta di 1.',
-        },
-        {
           name: "Conoscenza dell'Artefice",
           description:
             'Bonus doppio di competenza alle prove di Intelligenza (Storia) relative a oggetti magici, alchemici o tecnologici.',
@@ -475,17 +421,37 @@ export const dndRacialTraits = {
         {
           name: 'Inventore',
           description:
-            'Con strumenti da inventore, puoi costruire un congegno a orologeria (Accendino, Carillon, Giocattolo a molla).',
+            'Con strumenti da inventore, puoi costruire un piccolo congegno a orologeria.',
         },
       ],
     },
   },
-  Goliath: {
+  Goblin: {
     base: [
       {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Forza aumenta di 2 e la tua Costituzione aumenta di 1.',
+        name: 'Scurovisione',
+        description:
+          "Puoi vedere in luce fioca entro 18 metri come se fosse luce intensa, e nell'oscurità come se fosse luce fioca.",
       },
+      {
+        name: 'Retaggio Fatato',
+        description: 'Hai vantaggio ai tiri salvezza per non essere affascinato.',
+      },
+      {
+        name: 'Furia del Piccolo',
+        description:
+          'Quando danneggi una creatura con un attacco o un incantesimo e la taglia della creatura è più grande della tua, puoi infliggere danni extra pari al tuo bonus di competenza.',
+      },
+      {
+        name: 'Fuga Agile',
+        description:
+          "Come azione bonus in ogni tuo turno, puoi compiere l'azione di Disimpegno o Nascondersi.",
+      },
+    ],
+    subraces: {},
+  },
+  Goliath: {
+    base: [
       { name: 'Atleta Nato', description: "Hai competenza nell'abilità Atletica." },
       {
         name: 'Tenacia della Pietra',
@@ -503,10 +469,6 @@ export const dndRacialTraits = {
   },
   Halfling: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Destrezza aumenta di 2.',
-      },
       { name: 'Fortunato', description: 'Quando ottieni 1 a un tiro, puoi ripetere il tiro.' },
       { name: 'Coraggioso', description: "Vantaggio ai tiri salvezza contro l'essere spaventato." },
       {
@@ -517,20 +479,12 @@ export const dndRacialTraits = {
     subraces: {
       Piedelesto: [
         {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'Il tuo Carisma aumenta di 1.',
-        },
-        {
           name: 'Furtività Naturale',
           description:
             'Puoi tentare di nasconderti anche se sei oscurato solo da una creatura più grande di te.',
         },
       ],
       Tozzo: [
-        {
-          name: 'Incremento Punteggio di Caratteristica',
-          description: 'La tua Costituzione aumenta di 1.',
-        },
         {
           name: 'Resilienza dello Tozzo',
           description:
@@ -539,80 +493,27 @@ export const dndRacialTraits = {
       ],
     },
   },
-  Mezzelfo: {
+  Hobgoblin: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description:
-          'Il tuo Carisma aumenta di 2, e altri due punteggi a tua scelta aumentano di 1.',
-      },
       {
         name: 'Scurovisione',
         description:
-          'Entro 18 metri, vedi in luce fioca come se fosse luce intensa e in oscurità come se fosse luce fioca.',
+          "Puoi vedere in luce fioca entro 18 metri come se fosse luce intensa, e nell'oscurità come se fosse luce fioca.",
       },
       {
         name: 'Retaggio Fatato',
-        description: "Vantaggio ai TS contro l'essere affascinato, immune al sonno magico.",
+        description: 'Hai vantaggio ai tiri salvezza per non essere affascinato.',
       },
       {
-        name: 'Versatilità nelle Abilità',
-        description: 'Ottieni competenza in due abilità a tua scelta.',
+        name: 'Dono Fatato',
+        description:
+          "Come azione bonus, puoi compiere l'azione di Aiuto. Quando usi Aiuto, puoi fornire un beneficio extra (PF temporanei, velocità extra, o svantaggio al prossimo attacco del nemico). Puoi farlo un numero di volte pari al tuo bonus di competenza per riposo lungo.",
       },
     ],
-    subraces: [],
-  },
-  Mezzorco: {
-    base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Forza aumenta di 2 e la tua Costituzione aumenta di 1.',
-      },
-      {
-        name: 'Scurovisione',
-        description:
-          'Entro 18 metri, vedi in luce fioca come se fosse luce intensa e in oscurità come se fosse luce fioca.',
-      },
-      { name: 'Minaccioso', description: "Ottieni competenza nell'abilità Intimidire." },
-      {
-        name: 'Tenacia Implacabile',
-        description:
-          'Quando scendi a 0 PF ma non sei ucciso, puoi scendere a 1 PF invece. (1 volta per riposo lungo).',
-      },
-      {
-        name: 'Attacchi Selvaggi',
-        description:
-          "Quando ottieni un critico con un'arma da mischia, puoi tirare uno dei dadi di danno dell'arma una volta in più.",
-      },
-    ],
-    subraces: [],
-  },
-  'Infernale (Tiefling)': {
-    base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Intelligenza aumenta di 1 e il tuo Carisma aumenta di 2.',
-      },
-      {
-        name: 'Scurovisione',
-        description:
-          'Entro 18 metri, vedi in luce fioca come se fosse luce intensa e in oscurità come se fosse luce fioca.',
-      },
-      { name: 'Resistenza Infernale', description: 'Hai resistenza ai danni da fuoco.' },
-      {
-        name: 'Eredità Infernale',
-        description:
-          "Conosci 'taumaturgia'. Al 3° livello, puoi lanciare 'rimprovero infernale' (2° liv.). Al 5°, 'oscurità'. (1 volta per riposo lungo, usa Carisma).",
-      },
-    ],
-    subraces: [],
+    subraces: {},
   },
   Kenku: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Destrezza aumenta di 2 e la tua Saggezza aumenta di 1.',
-      },
       {
         name: 'Addestramento da Esperto',
         description:
@@ -633,35 +534,22 @@ export const dndRacialTraits = {
   },
   Koboldo: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Destrezza aumenta di 2 e la tua Forza diminuisce di 2.',
-      },
       { name: 'Scurovisione', description: 'Raggio di 18 metri.' },
       {
-        name: 'Sottomissione',
+        name: 'Grido Draconico',
         description:
-          'Come azione, puoi strisciare pateticamente per distrarre i nemici. Fino al tuo prossimo turno, i tiri di attacco dei tuoi alleati contro nemici entro 3 metri da te hanno vantaggio.',
+          "Come azione bonus, puoi emettere un grido. Fino all'inizio del tuo prossimo turno, tu e i tuoi alleati avete vantaggio ai tiri per colpire contro i nemici entro 3 metri da te che possono sentirti.",
       },
       {
         name: 'Tattiche di Branco',
         description:
           "Hai vantaggio al tiro di attacco contro una creatura se almeno uno dei tuoi alleati si trova entro 1,5 metri dalla creatura e l'alleato non è inabile.",
       },
-      {
-        name: 'Sensibilità alla Luce Solare',
-        description:
-          'Svantaggio ai tiri di attacco e alle prove di Saggezza (Percezione) basate sulla vista quando tu o il bersaglio siete in luce solare diretta.',
-      },
     ],
     subraces: [],
   },
   Leonin: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Costituzione aumenta di 2 e la tua Forza aumenta di 1.',
-      },
       {
         name: 'Artigli',
         description:
@@ -681,13 +569,28 @@ export const dndRacialTraits = {
     ],
     subraces: [],
   },
-  // Incolla questo codice subito dopo il codice della Parte 2, nello stesso file.
-  Lizardfolk: {
+  Leporidon: {
     base: [
       {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Costituzione aumenta di 2 e la tua Saggezza aumenta di 1.',
+        name: 'Innesco Leporino',
+        description: 'Puoi aggiungere il tuo bonus di competenza al tuo tiro di iniziativa.',
       },
+      { name: 'Sensi Leporini', description: "Hai competenza nell'abilità Percezione." },
+      {
+        name: 'Zampa Fortunata',
+        description:
+          'Quando fallisci un tiro salvezza di Destrezza, puoi usare la tua reazione per aggiungere 1d4 al tiro, potenzialmente trasformandolo in un successo.',
+      },
+      {
+        name: 'Salto del Coniglio',
+        description:
+          'Come azione bonus, puoi saltare un numero di metri pari a 1,5 volte il tuo bonus di competenza, senza provocare attacchi di opportunità. Puoi usarlo un numero di volte pari al tuo bonus di competenza per riposo lungo.',
+      },
+    ],
+    subraces: {},
+  },
+  Lizardfolk: {
+    base: [
       {
         name: 'Morso',
         description: "Il tuo morso è un'arma naturale (1d6 perforante) con cui sei competente.",
@@ -706,18 +609,72 @@ export const dndRacialTraits = {
     ],
     subraces: [],
   },
-  Orco: {
+  Mezzelfo: {
     base: [
       {
-        name: 'Incremento Punteggi di Caratteristica',
+        name: 'Scurovisione',
         description:
-          'La tua Forza aumenta di 2, la tua Costituzione aumenta di 1 e la tua Intelligenza diminuisce di 2.',
+          'Entro 18 metri, vedi in luce fioca come se fosse luce intensa e in oscurità come se fosse luce fioca.',
       },
-      { name: 'Scurovisione', description: 'Raggio di 18 metri.' },
+      {
+        name: 'Retaggio Fatato',
+        description: "Vantaggio ai TS contro l'essere affascinato, immune al sonno magico.",
+      },
+      {
+        name: 'Versatilità nelle Abilità',
+        description: 'Ottieni competenza in due abilità a tua scelta.',
+      },
+    ],
+    subraces: [],
+  },
+  Mezzorco: {
+    base: [
+      {
+        name: 'Scurovisione',
+        description:
+          'Entro 18 metri, vedi in luce fioca come se fosse luce intensa e in oscurità come se fosse luce fioca.',
+      },
+      { name: 'Minaccioso', description: "Ottieni competenza nell'abilità Intimidire." },
+      {
+        name: 'Tenacia Implacabile',
+        description:
+          'Quando scendi a 0 PF ma non sei ucciso, puoi scendere a 1 PF invece. (1 volta per riposo lungo).',
+      },
+      {
+        name: 'Attacchi Selvaggi',
+        description:
+          "Quando ottieni un critico con un'arma da mischia, puoi tirare uno dei dadi di danno dell'arma una volta in più e aggiungerlo al danno extra.",
+      },
+    ],
+    subraces: [],
+  },
+  Minotauro: {
+    base: [
+      {
+        name: 'Corna',
+        description:
+          "Le tue corna sono un'arma naturale da mischia, che infligge 1d6 + mod. Forza danni perforanti.",
+      },
+      {
+        name: 'Carica Trafiggente',
+        description:
+          "Se ti muovi di almeno 3 metri in linea retta, puoi usare un'azione bonus per spingere un bersaglio di taglia Grande o inferiore di 3 metri.",
+      },
+      {
+        name: 'Cornata Martellante',
+        description:
+          "Subito dopo aver colpito con un attacco in mischia durante un'azione di Scatto, puoi effettuare un attacco bonus con le corna.",
+      },
+    ],
+    subraces: {},
+  },
+  Orco: {
+    base: [
+      { name: 'Scurovisione', description: 'Puoi vedere in luce fioca entro 18 metri.' },
       {
         name: 'Aggressivo',
         description:
-          'Come azione bonus, puoi muoverti fino alla tua velocità verso un nemico che puoi vedere o sentire. Devi terminare il tuo movimento più vicino al nemico di dove hai iniziato.',
+          'Come azione bonus nel tuo turno, puoi muoverti fino alla tua velocità verso un nemico che puoi vedere o sentire.',
       },
       {
         name: 'Fisico Possente',
@@ -729,11 +686,6 @@ export const dndRacialTraits = {
   },
   Satiro: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'Il tuo Carisma aumenta di 2 e la tua Destrezza aumenta di 1.',
-      },
-      { name: 'Fey', description: 'Il tuo tipo di creatura è fatato, invece che umanoide.' },
       {
         name: 'Ariete',
         description:
@@ -748,23 +700,38 @@ export const dndRacialTraits = {
         description: 'Hai competenza in Intrattenere e con uno strumento musicale a tua scelta.',
       },
       {
-        name: 'Rivelazioni e Baldoria',
-        description: 'Sei immune agli effetti che ti spaventano o ti affascinano.',
+        name: 'Salto Gioioso',
+        description: 'Puoi aggiungere 1d8 ai tuoi salti in alto e in lungo.',
       },
     ],
     subraces: [],
   },
+  Sirena: {
+    base: [
+      { name: 'Anfibio', description: 'Puoi respirare aria e acqua.' },
+      {
+        name: 'Canto Accattivante',
+        description:
+          "Conosci il trucchetto 'amicizia'. Al 3° livello, puoi lanciare 'charme su persone' una volta per riposo lungo. Carisma è la caratteristica da incantatore.",
+        spells: [
+          { name: 'Amicizia', source: 'Sirena' },
+          { name: 'Charme su Persone', source: 'Sirena (Liv 3)' },
+        ],
+      },
+      {
+        name: 'Guardiana del Profondo',
+        description: 'Le creature acquatiche hanno una disposizione amichevole nei tuoi confronti.',
+      },
+    ],
+    subraces: {},
+  },
   Tabaxi: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Destrezza aumenta di 2 e il tuo Carisma aumenta di 1.',
-      },
-      { name: 'Scurovisione', description: 'Raggio di 18 metri.' },
+      { name: 'Scurovisione', description: 'Puoi vedere in luce fioca entro 18 metri.' },
       {
         name: 'Agilità Felina',
         description:
-          'Puoi raddoppiare la tua velocità di movimento per un turno. Dopo, non puoi riutilizzarlo finché non ti muovi di 0 metri in un tuo turno.',
+          'Quando ti muovi nel tuo turno in combattimento, puoi raddoppiare la tua velocità. Una volta fatto, non puoi riutilizzarlo finché non ti muovi di 0 metri in uno dei tuoi turni.',
       },
       {
         name: 'Artigli del Gatto',
@@ -778,12 +745,29 @@ export const dndRacialTraits = {
     ],
     subraces: [],
   },
-  Tortle: {
+  Tiefling: {
     base: [
       {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Forza aumenta di 2 e la tua Saggezza aumenta di 1.',
+        name: 'Scurovisione',
+        description:
+          'Entro 18 metri, vedi in luce fioca come se fosse luce intensa e in oscurità come se fosse luce fioca.',
       },
+      { name: 'Resistenza Infernale', description: 'Hai resistenza ai danni da fuoco.' },
+      {
+        name: 'Eredità Infernale',
+        description:
+          "Conosci 'taumaturgia'. Al 3° livello, puoi lanciare 'rimprovero infernale' (2° liv.). Al 5°, 'oscurità'. (1 volta per riposo lungo, usa Carisma).",
+        spells: [
+          { name: 'Taumaturgia', source: 'Eredità Infernale' },
+          { name: 'Rimprovero Infernale', source: 'Eredità Infernale (Liv 3)' },
+          { name: 'Oscurità', source: 'Eredità Infernale (Liv 5)' },
+        ],
+      },
+    ],
+    subraces: [],
+  },
+  Tortle: {
+    base: [
       { name: 'Artigli', description: 'I tuoi artigli sono armi naturali (1d4 tagliente).' },
       { name: 'Trattenere il Fiato', description: 'Puoi trattenere il respiro per 1 ora.' },
       {
@@ -801,15 +785,16 @@ export const dndRacialTraits = {
   },
   Tritone: {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'La tua Forza, Costituzione e Carisma aumentano di 1.',
-      },
       { name: 'Anfibio', description: 'Puoi respirare aria e acqua.' },
       {
         name: "Controllo dell'Aria e dell'Acqua",
         description:
           "Conosci il trucchetto 'creare o distruggere acqua'. Al 3° livello, puoi lanciare 'camminare sull'acqua' una volta per riposo lungo. Al 5°, 'muro d'acqua'. (usa Carisma).",
+        spells: [
+          { name: 'Creare o Distruggere Acqua', source: 'Tritone' },
+          { name: "Camminare sull'Acqua", source: 'Tritone (Liv 3)' },
+          { name: "Muro d'Acqua", source: 'Tritone (Liv 5)' },
+        ],
       },
       {
         name: 'Emissario del Mare',
@@ -825,22 +810,19 @@ export const dndRacialTraits = {
   Umano: {
     base: [
       {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'Tutti i tuoi punteggi di caratteristica aumentano di 1.',
-      },
-      {
         name: 'Linguaggi',
         description: 'Parli, leggi e scrivi il Comune e un linguaggio extra a tua scelta.',
+      },
+      {
+        name: 'Variante (Opzionale)',
+        description:
+          "Invece di aumentare tutte le caratteristiche di 1, puoi aumentare due caratteristiche di 1, ottenere competenza in un'abilità e un talento a tua scelta.",
       },
     ],
     subraces: [],
   },
   'Yuan-ti Pureblood': {
     base: [
-      {
-        name: 'Incremento Punteggi di Caratteristica',
-        description: 'Il tuo Carisma aumenta di 2 e la tua Intelligenza aumenta di 1.',
-      },
       { name: 'Scurovisione', description: 'Raggio di 18 metri.' },
       {
         name: 'Immunità al Veleno',
@@ -854,6 +836,10 @@ export const dndRacialTraits = {
         name: 'Innate Spellcasting',
         description:
           "Conosci il trucchetto 'spruzzo velenoso'. Al 3° livello, puoi lanciare 'suggestione animale' una volta per riposo lungo. (usa Carisma).",
+        spells: [
+          { name: 'Spruzzo Velenoso', source: 'Yuan-ti' },
+          { name: 'Suggestione Animale', source: 'Yuan-ti (Liv 3)' },
+        ],
       },
     ],
     subraces: [],

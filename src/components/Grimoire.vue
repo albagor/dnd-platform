@@ -22,7 +22,9 @@ const uniqueSpells = computed(() => {
 // Genera dinamicamente le opzioni per i filtri (usando la lista pulita)
 const allSpellClasses = computed(() => {
   const classes = new Set()
-  uniqueSpells.value.forEach((spell) => spell.classes.forEach((c) => classes.add(c)))
+  uniqueSpells.value.forEach(
+    (spell) => spell.classes && spell.classes.forEach((c) => classes.add(c)),
+  )
   return Array.from(classes).sort()
 })
 const allSpellSchools = computed(() => {
@@ -35,7 +37,8 @@ const filteredSpells = computed(() => {
   const spells = uniqueSpells.value.filter((spell) => {
     const matchesSearch = spell.name.toLowerCase().includes(searchTerm.value.toLowerCase())
     const matchesLevel = selectedLevel.value === null || spell.level === selectedLevel.value
-    const matchesClass = selectedClass.value === null || spell.classes.includes(selectedClass.value)
+    const matchesClass =
+      selectedClass.value === null || (spell.classes && spell.classes.includes(selectedClass.value))
     const matchesSchool = selectedSchool.value === null || spell.school === selectedSchool.value
     return matchesSearch && matchesLevel && matchesClass && matchesSchool
   })
@@ -84,6 +87,7 @@ function addSpell(spell) {
           <div class="spell-info">
             <div class="spell-title">
               <strong class="spell-name">{{ spell.name }}</strong>
+              <span v-if="spell.concentration" class="concentration-badge">Concentrazione</span>
               <span>(Liv. {{ spell.level }} - {{ spell.school }})</span>
             </div>
             <div class="spell-details">
@@ -229,5 +233,23 @@ function addSpell(spell) {
   flex-shrink: 0;
   margin-left: 15px;
   margin-top: 5px;
+}
+.concentration-badge {
+  background: #f7d358;
+  color: #b30000;
+  font-weight: bold;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 10px;
+  font-size: 0.9em;
+  border: 1px solid #b30000;
+}
+.bersaglio {
+  color: #0055a5;
+  font-weight: bold;
+}
+.materiale {
+  color: #b30000;
+  font-weight: bold;
 }
 </style>

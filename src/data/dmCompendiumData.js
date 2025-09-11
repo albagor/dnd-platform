@@ -275,6 +275,23 @@ export const compendiumData = [
     ],
   },
   {
+    category: 'Riposo Breve e Riposo Lungo',
+    rules: [
+      {
+        name: 'Riposo Breve',
+        description: `Durata: almeno 1 ora di inattività (niente combattimento, incantesimi, attività faticose).\n\nRecupero Punti Ferita: durante un riposo breve, ogni personaggio può spendere uno o più Dadi Vita (pari al proprio livello totale, es: un Guerriero di 5° livello ha 5 Dadi Vita da d10). Per ogni dado speso, tira il dado appropriato per la classe, aggiunge il modificatore di Costituzione e recupera quella quantità di punti ferita. Può decidere quanti dadi spendere uno alla volta.\n\nRecupero Risorse: alcune abilità e risorse (es: Incantare Divinità del Chierico, Punti Ki del Monaco, Dadi di Superiorità del Guerriero) si ricaricano dopo un riposo breve. Gli slot incantesimo generalmente NON si recuperano (tranne per alcune classi come il Warlock).\n\nLimiti: non c'è un limite massimo di riposi brevi al giorno, ma il DM può limitarli per motivi narrativi.\n\nEsempio: Un Mago di 4° livello con 10/24 PF decide di fare un riposo breve. Ha 4 Dadi Vita da d6. Tira 2d6 e ottiene 4 e 5, aggiunge +2 (Costituzione) a ciascun dado: recupera 4+2=6 e 5+2=7, per un totale di 13 PF. Ora ha 23/24 PF e gli restano 2 Dadi Vita per la giornata.`,
+      },
+      {
+        name: 'Riposo Lungo',
+        description: `Durata: almeno 8 ore consecutive (può includere fino a 2 ore di veglia leggera, come montare la guardia o camminare).\n\nRecupero Punti Ferita: al termine, il personaggio recupera tutti i punti ferita persi.\n\nRecupero Dadi Vita: recupera fino a metà del totale dei propri Dadi Vita (arrotondando per difetto).\n\nRecupero Risorse: tutti gli slot incantesimo vengono ripristinati, così come la maggior parte delle abilità e risorse a ricarica giornaliera (es: Ira del Barbaro, Punti Stregoneria, Ispirazione Bardica, ecc).\n\nLimiti: non si può effettuare più di un riposo lungo ogni 24 ore. Se il riposo è interrotto da almeno 1 ora di attività faticosa, non conta come riposo lungo.\n\nEsempio: Un Paladino di 6° livello con 0/54 PF e 2/6 Dadi Vita rimasti effettua un riposo lungo. Al termine, torna a 54/54 PF e recupera 3 Dadi Vita (metà di 6). Gli slot incantesimo e le abilità giornaliere sono di nuovo disponibili.`,
+      },
+      {
+        name: 'Differenze Chiave',
+        description: `Riposo breve: recupero parziale, uso dei Dadi Vita, ricarica di alcune risorse specifiche di classe.\nRiposo lungo: recupero completo di PF, slot incantesimo, risorse giornaliere e metà dei Dadi Vita.\n\nLe classi come Guerriero, Monaco e Warlock beneficiano molto dei riposi brevi, mentre la maggior parte delle altre classi dipende dai riposi lunghi per il pieno recupero.`,
+      },
+    ],
+  },
+  {
     category: 'Statistiche Oggetti',
     rules: [
       {

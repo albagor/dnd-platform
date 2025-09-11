@@ -1,11 +1,18 @@
-// src/data/dndSubclasses.js
-
 export const dndSubclasses = {
   Artefice: {
     choiceLevel: 3,
     options: {
       Alchimista: {
         3: [
+          {
+            name: 'Incantesimi da Alchimista',
+            description:
+              "Hai sempre preparati gli incantesimi 'parola guaritrice' e 'raggio di infermità'.",
+            spells: [
+              { name: 'Parola Guaritrice', source: 'Alchimista' },
+              { name: 'Raggio di Infermità', source: 'Alchimista' },
+            ],
+          },
           {
             name: 'Omeopata Sperimentale',
             description:
@@ -22,6 +29,44 @@ export const dndSubclasses = {
             description:
               'Aggiungi il tuo mod di Intelligenza a un tiro di dado quando ripristini PF o infliggi danni da acido, necrotici, veleno o fuoco con un incantesimo da artefice.',
           },
+          {
+            name: 'Incantesimi da Alchimista (Liv 5)',
+            description: "Hai sempre preparati 'raggio rovente' e 'invisibilità'.",
+            spells: [
+              { name: 'Raggio Rovente', source: 'Alchimista' },
+              { name: 'Invisibilità', source: 'Alchimista' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi da Alchimista (Liv 9)',
+            description: "Hai sempre preparati 'velocità' e 'nube maleodorante'.",
+            spells: [
+              { name: 'Velocità', source: 'Alchimista' },
+              { name: 'Nube Maleodorante', source: 'Alchimista' },
+            ],
+          },
+        ],
+        13: [
+          {
+            name: 'Incantesimi da Alchimista (Liv 13)',
+            description: "Hai sempre preparati 'morte apparente' e 'pelle di pietra'.",
+            spells: [
+              { name: 'Morte Apparente', source: 'Alchimista' },
+              { name: 'Pelle di Pietra', source: 'Alchimista' },
+            ],
+          },
+        ],
+        17: [
+          {
+            name: 'Incantesimi da Alchimista (Liv 17)',
+            description: "Hai sempre preparati 'nube mortale' e 'rianimare morti'.",
+            spells: [
+              { name: 'Nube Mortale', source: 'Alchimista' },
+              { name: 'Rianimare Morti', source: 'Alchimista' },
+            ],
+          },
         ],
       },
       Artigliere: {
@@ -33,6 +78,10 @@ export const dndSubclasses = {
           {
             name: "Incantesimi dell'Artigliere",
             description: "Ottieni incantesimi bonus come 'scudo' e 'onda tonante'.",
+            spells: [
+              { name: 'Scudo', source: 'Artigliere' },
+              { name: 'Onda Tonante', source: 'Artigliere' },
+            ],
           },
           {
             name: 'Cannone Eldritch',
@@ -46,6 +95,44 @@ export const dndSubclasses = {
             description:
               'Puoi incanalare i tuoi incantesimi attraverso il cannone e aggiungi 1d8 al tiro per i danni di un incantesimo da artefice.',
           },
+          {
+            name: "Incantesimi dell'Artigliere (Liv 5)",
+            description: "Hai sempre preparati 'frantumare' e 'raggio rovente'.",
+            spells: [
+              { name: 'Frantumare', source: 'Artigliere' },
+              { name: 'Raggio Rovente', source: 'Artigliere' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: "Incantesimi dell'Artigliere (Liv 9)",
+            description: "Hai sempre preparati 'palla di fuoco' e 'muro di vento'.",
+            spells: [
+              { name: 'Palla di Fuoco', source: 'Artigliere' },
+              { name: 'Muro di Vento', source: 'Artigliere' },
+            ],
+          },
+        ],
+        13: [
+          {
+            name: "Incantesimi dell'Artigliere (Liv 13)",
+            description: "Hai sempre preparati 'scudo di fuoco' e 'muro di fuoco'.",
+            spells: [
+              { name: 'Scudo di Fuoco', source: 'Artigliere' },
+              { name: 'Muro di Fuoco', source: 'Artigliere' },
+            ],
+          },
+        ],
+        17: [
+          {
+            name: "Incantesimi dell'Artigliere (Liv 17)",
+            description: "Hai sempre preparati 'cono di freddo' e 'muro di forza'.",
+            spells: [
+              { name: 'Cono di Freddo', source: 'Artigliere' },
+              { name: 'Muro di Forza', source: 'Artigliere' },
+            ],
+          },
         ],
       },
       'Fabbro da Battaglia': {
@@ -57,6 +144,10 @@ export const dndSubclasses = {
           {
             name: 'Incantesimi del Fabbro da Battaglia',
             description: "Ottieni incantesimi bonus come 'eroismo' e 'punizione marchiante'.",
+            spells: [
+              { name: 'Eroismo', source: 'Fabbro da Battaglia' },
+              { name: 'Punizione Marchiante', source: 'Fabbro da Battaglia' },
+            ],
           },
           {
             name: 'Pronto alla Battaglia',
@@ -68,7 +159,47 @@ export const dndSubclasses = {
             description: 'Costruisci un compagno canino robotico che combatte al tuo fianco.',
           },
         ],
-        5: [{ name: 'Attacco Extra', description: 'Puoi attaccare due volte invece di una.' }],
+        5: [
+          { name: 'Attacco Extra', description: 'Puoi attaccare due volte invece di una.' },
+          {
+            name: 'Incantesimi del Fabbro da Battaglia (Liv 5)',
+            description: "Hai sempre preparati 'arma magica' e 'vincolo protettivo'.",
+            spells: [
+              { name: 'Arma Magica', source: 'Fabbro da Battaglia' },
+              { name: 'Vincolo Protettivo', source: 'Fabbro da Battaglia' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi del Fabbro da Battaglia (Liv 9)',
+            description: "Hai sempre preparati 'aura di vitalità' e 'cerchio magico'.",
+            spells: [
+              { name: 'Aura di Vitalità', source: 'Fabbro da Battaglia' },
+              { name: 'Cerchio Magico', source: 'Fabbro da Battaglia' },
+            ],
+          },
+        ],
+        13: [
+          {
+            name: 'Incantesimi del Fabbro da Battaglia (Liv 13)',
+            description: "Hai sempre preparati 'pelle di pietra' e 'scudo di fuoco'.",
+            spells: [
+              { name: 'Pelle di Pietra', source: 'Fabbro da Battaglia' },
+              { name: 'Scudo di Fuoco', source: 'Fabbro da Battaglia' },
+            ],
+          },
+        ],
+        17: [
+          {
+            name: 'Incantesimi del Fabbro da Battaglia (Liv 17)',
+            description: "Hai sempre preparati 'punizione bandente' e 'rianimare morti'.",
+            spells: [
+              { name: 'Punizione Bandente', source: 'Fabbro da Battaglia' },
+              { name: 'Rianimare Morti', source: 'Fabbro da Battaglia' },
+            ],
+          },
+        ],
       },
       Armaiolo: {
         3: [
@@ -79,22 +210,26 @@ export const dndSubclasses = {
           {
             name: 'Incantesimi da Armaiolo (Liv 3)',
             description:
-              "Hai sempre preparati gli incantesimi 'Dardo Incantato' e 'Onda di Tuono', che non contano per il numero di incantesimi che puoi preparare.",
+              "Hai sempre preparati gli incantesimi 'Dardo Incantato' e 'Onda di Tuono'.",
+            spells: [
+              { name: 'Dardo Incantato', source: 'Armaiolo' },
+              { name: 'Onda Tonante', source: 'Armaiolo' },
+            ],
           },
           {
             name: 'Armatura Arcana',
             description:
-              "Puoi trasformare un'armatura pesante in un'Armatura Arcana. Non ha requisiti di Forza, può essere usata come focus per incantesimi e non può esserti tolta contro la tua volontà. L'armatura ha due modelli che puoi cambiare dopo un riposo lungo.",
+              "Puoi trasformare un'armatura pesante in un'Armatura Arcana con due modelli (Guardiano e Infiltrato).",
           },
           {
             name: 'Modello Guardiano',
             description:
-              "(Mentre indossi l'Armatura Arcana) Ogni tuo guanto diventa un'arma da mischia che infligge 1d8 danni da tuono. Una creatura colpita ha svantaggio ai tiri per colpire contro bersagli diversi da te. Puoi anche usare un'azione bonus per ottenere Punti Ferita Temporanei pari al tuo livello da Artefice un numero di volte pari al tuo bonus di competenza per riposo lungo.",
+              'Ottieni Guanti Tonanti (attacco in mischia) e un Campo Difensivo (PF temporanei).',
           },
           {
             name: 'Modello Infiltrato',
             description:
-              "(Mentre indossi l'Armatura Arcana) Ottieni un'arma a distanza sul petto o sui guanti che infligge 1d6 danni da fulmine con una portata di 27/90m. Una volta per turno, un colpo andato a segno infligge 1d6 danni da fulmine extra. La tua velocità aumenta di 1,5m e hai vantaggio alle prove di Furtività.",
+              'Ottieni un Lanciatore Fulminante (attacco a distanza), velocità aumentata e vantaggio a Furtività.',
           },
         ],
         5: [
@@ -107,39 +242,52 @@ export const dndSubclasses = {
             name: 'Incantesimi da Armaiolo (Liv 5)',
             description:
               "Hai sempre preparati gli incantesimi 'Immagine Speculare' e 'Frantumare'.",
+            spells: [
+              { name: 'Immagine Speculare', source: 'Armaiolo' },
+              { name: 'Frantumare', source: 'Armaiolo' },
+            ],
           },
         ],
         9: [
           {
             name: "Modifiche all'Armatura",
             description:
-              "Puoi infondere separatamente il petto, gli stivali, l'elmo e l'arma speciale della tua Armatura Arcana. Ottieni anche due infusioni attive extra, che però possono essere applicate solo alla tua Armatura Arcana.",
+              'Puoi infondere separatamente i pezzi della tua Armatura Arcana. Ottieni due infusioni extra.',
           },
           {
             name: 'Incantesimi da Armaiolo (Liv 9)',
             description: "Hai sempre preparati gli incantesimi 'Muro di Vento' e 'Velocità'.",
+            spells: [
+              { name: 'Fulmine', source: 'Armaiolo' },
+              { name: 'Trama Ipnotica', source: 'Armaiolo' },
+            ], // Corretti come da manuale
           },
         ],
         13: [
-          // Livello 13 per gli incantesimi dell'Artefice
           {
             name: 'Incantesimi da Armaiolo (Liv 13)',
             description:
               "Hai sempre preparati gli incantesimi 'Scudo di Fuoco' e 'Invisibilità Superiore'.",
+            spells: [
+              { name: 'Scudo di Fuoco', source: 'Armaiolo' },
+              { name: 'Invisibilità Superiore', source: 'Armaiolo' },
+            ],
           },
         ],
         15: [
           {
             name: 'Armatura Perfezionata',
-            description:
-              'I modelli della tua Armatura Arcana vengono potenziati. Guardiano: quando una creatura colpita dal tuo Guanto Tonante termina il suo turno, puoi usare la tua reazione per costringerla ad avvicinarsi a te. Infiltrato: ogni creatura che ti manca con un attacco subisce svantaggio al suo prossimo tiro per colpire contro di te.',
+            description: 'I modelli della tua Armatura Arcana vengono potenziati.',
           },
         ],
         17: [
-          // Livello 17 per gli incantesimi dell'Artefice
           {
             name: 'Incantesimi da Armaiolo (Liv 17)',
             description: "Hai sempre preparati gli incantesimi 'Passapareti' e 'Muro di Forza'.",
+            spells: [
+              { name: 'Passapareti', source: 'Armaiolo' },
+              { name: 'Muro di Forza', source: 'Armaiolo' },
+            ],
           },
         ],
       },
@@ -217,7 +365,7 @@ export const dndSubclasses = {
           {
             name: 'Nota della Creazione',
             description:
-              "Quando dai a qualcuno un'Ispirazione Bardica, crei una nota danzante che può essere usata per vari effetti (es. infliggere danni, creare copertura).",
+              "Quando dai a qualcuno un'Ispirazione Bardica, crei una nota danzante che può essere usata per vari effetti.",
           },
           {
             name: 'Oggetto di Scena',
@@ -280,7 +428,7 @@ export const dndSubclasses = {
           {
             name: 'Lama Fiorita',
             description:
-              "Puoi usare un'arma come focus per i tuoi incantesimi. Puoi attaccare e poi usare un'Ispirazione Bardica per applicare una 'Fioritura' (es. aumentare il danno, spingere il nemico, aumentare la tua CA).",
+              "Puoi usare un'arma come focus per i tuoi incantesimi e usare un'Ispirazione Bardica per applicare una 'Fioritura' ai tuoi attacchi.",
           },
         ],
       },
@@ -302,28 +450,34 @@ export const dndSubclasses = {
           {
             name: 'Lame Psichiche',
             description:
-              "Quando colpisci una creatura con un'arma, puoi spendere un'ispirazione per infliggere 2d6 danni psichici extra.",
+              "Quando colpisci con un'arma, puoi spendere un'ispirazione per infliggere 2d6 danni psichici extra.",
           },
           {
             name: 'Parole di Terrore',
             description:
-              "Puoi parlare con un umanoide per 1 minuto per instillargli una paura profonda. Deve superare un TS su Saggezza o essere spaventato da te o da un'altra creatura a tua scelta.",
+              'Puoi parlare con un umanoide per 1 minuto per instillargli una paura profonda.',
           },
         ],
       },
     },
   },
-  // Incolla questo codice subito dopo il codice della Parte 1, nello stesso file.
-
   Chierico: {
     choiceLevel: 1,
     options: {
       'Dominio della Conoscenza': {
         1: [
           {
+            name: 'Incantesimi di Dominio',
+            description: "Hai sempre preparati 'comando' e 'identificare'.",
+            spells: [
+              { name: 'Comando', source: 'Dominio della Conoscenza' },
+              { name: 'Identificare', source: 'Dominio della Conoscenza' },
+            ],
+          },
+          {
             name: 'Benedizioni della Conoscenza',
             description:
-              'Impari due linguaggi e ottieni competenza con bonus doppio in due abilità (Arcano, Storia, Natura, Religione).',
+              'Impari due linguaggi e ottieni competenza con bonus doppio in due abilità a scelta tra Arcano, Storia, Natura o Religione.',
           },
         ],
         2: [
@@ -332,9 +486,57 @@ export const dndSubclasses = {
             description: "Ottieni competenza temporanea in un'abilità o strumento.",
           },
         ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'augurio' e 'suggestione'.",
+            spells: [
+              { name: 'Augurio', source: 'Dominio della Conoscenza' },
+              { name: 'Suggestione', source: 'Dominio della Conoscenza' },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'anti-individuazione' e 'parlare con i morti'.",
+            spells: [
+              { name: 'Anti-individuazione', source: 'Dominio della Conoscenza' },
+              { name: 'Parlare con i Morti', source: 'Dominio della Conoscenza' },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'confusione' e 'occhio arcano'.",
+            spells: [
+              { name: 'Confusione', source: 'Dominio della Conoscenza' },
+              { name: 'Occhio Arcano', source: 'Dominio della Conoscenza' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description: "Hai sempre preparati 'scrutare' e 'leggenda'.",
+            spells: [
+              { name: 'Scrutare', source: 'Dominio della Conoscenza' },
+              { name: 'Leggenda', source: 'Dominio della Conoscenza' },
+            ],
+          },
+        ],
       },
       'Dominio della Forgia': {
         1: [
+          {
+            name: 'Incantesimi di Dominio',
+            description: "Hai sempre preparati 'identificare' e 'punizione bruciante'.",
+            spells: [
+              { name: 'Identificare', source: 'Dominio della Forgia' },
+              { name: 'Punizione Bruciante', source: 'Dominio della Forgia' },
+            ],
+          },
           {
             name: 'Competenza Bonus',
             description: 'Ottieni competenza in armature pesanti e strumenti da fabbro.',
@@ -350,9 +552,57 @@ export const dndSubclasses = {
             description: 'Puoi creare un semplice oggetto di metallo.',
           },
         ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'arma magica' e 'scudo termico'.",
+            spells: [
+              { name: 'Arma Magica', source: 'Dominio della Forgia' },
+              { name: 'Scudo Termico', source: 'Dominio della Forgia' },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'arma elementale' e 'protezione dall\'energia'.",
+            spells: [
+              { name: 'Arma Elementale', source: 'Dominio della Forgia' },
+              { name: "Protezione dall'Energia", source: 'Dominio della Forgia' },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'fabbricare' e 'muro di fuoco'.",
+            spells: [
+              { name: 'Fabbricare', source: 'Dominio della Forgia' },
+              { name: 'Muro di Fuoco', source: 'Dominio della Forgia' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description: "Hai sempre preparati 'animare oggetti' e 'muro di pietra'.",
+            spells: [
+              { name: 'Animare Oggetti', source: 'Dominio della Forgia' },
+              { name: 'Muro di Pietra', source: 'Dominio della Forgia' },
+            ],
+          },
+        ],
       },
       'Dominio della Guerra': {
         1: [
+          {
+            name: 'Incantesimi di Dominio',
+            description: "Hai sempre preparati 'favore divino' e 'scudo della fede'.",
+            spells: [
+              { name: 'Favore Divino', source: 'Dominio della Guerra' },
+              { name: 'Scudo della Fede', source: 'Dominio della Guerra' },
+            ],
+          },
           {
             name: 'Competenza Bonus',
             description: 'Ottieni competenza in armature pesanti e armi da guerra.',
@@ -360,18 +610,66 @@ export const dndSubclasses = {
           {
             name: 'Prete Guerriero',
             description:
-              "Quando usi l'azione Attaccare, puoi effettuare un attacco come azione bonus.",
+              "Quando usi l'azione Attaccare, puoi effettuare un attacco con arma come azione bonus.",
           },
         ],
         2: [
           {
             name: 'Incanalare Divinità: Colpo Guidato',
-            description: 'Ottieni un bonus di +10 a un tiro di attacco.',
+            description: 'Ottieni un bonus di +10 a un tiro per colpire.',
+          },
+        ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'arma magica' e 'arma spirituale'.",
+            spells: [
+              { name: 'Arma Magica', source: 'Dominio della Guerra' },
+              { name: 'Arma Spirituale', source: 'Dominio della Guerra' },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'manto del crociato' e 'guardiani spirituali'.",
+            spells: [
+              { name: 'Manto del Crociato', source: 'Dominio della Guerra' },
+              { name: 'Guardiani Spirituali', source: 'Dominio della Guerra' },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'libertà di movimento' e 'pelle di pietra'.",
+            spells: [
+              { name: 'Libertà di Movimento', source: 'Dominio della Guerra' },
+              { name: 'Pelle di Pietra', source: 'Dominio della Guerra' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description: "Hai sempre preparati 'colpo infuocato' e 'colpo di fiamma'.",
+            spells: [
+              { name: 'Colpo Infuocato', source: 'Dominio della Guerra' },
+              { name: 'Colpo di Fiamma', source: 'Dominio della Guerra' },
+            ],
           },
         ],
       },
       'Dominio della Luce': {
         1: [
+          {
+            name: 'Incantesimi di Dominio',
+            description: "Hai sempre preparati 'mani brucianti' e 'luminescenza'.",
+            spells: [
+              { name: 'Mani Brucianti', source: 'Dominio della Luce' },
+              { name: 'Luminescenza', source: 'Dominio della Luce' },
+            ],
+          },
           { name: 'Trucchetto Bonus', description: "Impari il trucchetto 'luce'." },
           {
             name: 'Interdizione Ardente',
@@ -384,9 +682,57 @@ export const dndSubclasses = {
             description: "Dissipi l'oscurità e infliggi danni radianti.",
           },
         ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'raggio rovente' e 'sfera infuocata'.",
+            spells: [
+              { name: 'Raggio Rovente', source: 'Dominio della Luce' },
+              { name: 'Sfera Infuocata', source: 'Dominio della Luce' },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'palla di fuoco' e 'luce diurna'.",
+            spells: [
+              { name: 'Palla di Fuoco', source: 'Dominio della Luce' },
+              { name: 'Luce Diurna', source: 'Dominio della Luce' },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'guardiano della fede' e 'muro di fuoco'.",
+            spells: [
+              { name: 'Guardiano della Fede', source: 'Dominio della Luce' },
+              { name: 'Muro di Fuoco', source: 'Dominio della Luce' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description: "Hai sempre preparati 'colpo di fiamma' e 'scrutare'.",
+            spells: [
+              { name: 'Colpo di Fiamma', source: 'Dominio della Luce' },
+              { name: 'Scrutare', source: 'Dominio della Luce' },
+            ],
+          },
+        ],
       },
       'Dominio della Morte': {
         1: [
+          {
+            name: 'Incantesimi di Dominio',
+            description: "Hai sempre preparati 'falso vivere' e 'raggio di infermità'.",
+            spells: [
+              { name: 'Falso Vivere', source: 'Dominio della Morte' },
+              { name: 'Raggio di Infermità', source: 'Dominio della Morte' },
+            ],
+          },
           { name: 'Competenza Bonus', description: 'Ottieni competenza nelle armi da guerra.' },
           {
             name: 'Mietitore',
@@ -401,9 +747,58 @@ export const dndSubclasses = {
               "Quando colpisci con un'arma da mischia, puoi infliggere 5 + il doppio del tuo livello da chierico danni necrotici extra.",
           },
         ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'cecità/sordità' e 'raggio di indebolimento'.",
+            spells: [
+              { name: 'Cecità/Sordità', source: 'Dominio della Morte' },
+              { name: 'Raggio di Indebolimento', source: 'Dominio della Morte' },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'animare morti' e 'tocco del vampiro'.",
+            spells: [
+              { name: 'Animare Morti', source: 'Dominio della Morte' },
+              { name: 'Tocco del Vampiro', source: 'Dominio della Morte' },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'interdizione alla morte' e 'piaga'.",
+            spells: [
+              { name: 'Interdizione alla Morte', source: 'Dominio della Morte' },
+              { name: 'Piaga', source: 'Dominio della Morte' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description: "Hai sempre preparati 'guscio anti-vita' e 'nube mortale'.",
+            spells: [
+              { name: 'Guscio Anti-vita', source: 'Dominio della Morte' },
+              { name: 'Nube Mortale', source: 'Dominio della Morte' },
+            ],
+          },
+        ],
       },
       'Dominio della Natura': {
         1: [
+          {
+            name: 'Incantesimi di Dominio',
+            description:
+              "Hai sempre preparati 'amicizia con gli animali' e 'parlare con gli animali'.",
+            spells: [
+              { name: 'Amicizia con gli Animali', source: 'Dominio della Natura' },
+              { name: 'Parlare con gli Animali', source: 'Dominio della Natura' },
+            ],
+          },
           {
             name: 'Discepolo della Natura',
             description:
@@ -417,9 +812,57 @@ export const dndSubclasses = {
             description: 'Scacci o ammalii bestie e vegetali.',
           },
         ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'crescita di spine' e 'pelle coriacea'.",
+            spells: [
+              { name: 'Crescita di Spine', source: 'Dominio della Natura' },
+              { name: 'Pelle Coriacea', source: 'Dominio della Natura' },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'muro di vento' e 'crescita vegetale'.",
+            spells: [
+              { name: 'Muro di Vento', source: 'Dominio della Natura' },
+              { name: 'Crescita Vegetale', source: 'Dominio della Natura' },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'dominare bestie' e 'ramp-icante afferrante'.",
+            spells: [
+              { name: 'Dominare Bestie', source: 'Dominio della Natura' },
+              { name: 'Rampicante Afferrante', source: 'Dominio della Natura' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description: "Hai sempre preparati 'piaga degli insetti' e 'muro di pietra'.",
+            spells: [
+              { name: 'Piaga degli Insetti', source: 'Dominio della Natura' },
+              { name: 'Muro di Pietra', source: 'Dominio della Natura' },
+            ],
+          },
+        ],
       },
       "Dominio dell'Ordine": {
         1: [
+          {
+            name: 'Incantesimi di Dominio',
+            description: "Hai sempre preparati 'comando' e 'eroismo'.",
+            spells: [
+              { name: 'Comando', source: "Dominio dell'Ordine" },
+              { name: 'Eroismo', source: "Dominio dell'Ordine" },
+            ],
+          },
           {
             name: 'Competenza Bonus',
             description:
@@ -437,9 +880,57 @@ export const dndSubclasses = {
             description: 'Forzi le creature a gettare ciò che impugnano e a cadere prone.',
           },
         ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'blocca persona' e 'zona di verità'.",
+            spells: [
+              { name: 'Blocca Persona', source: "Dominio dell'Ordine" },
+              { name: 'Zona di Verità', source: "Dominio dell'Ordine" },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'parola guaritrice di massa' e 'lentezza'.",
+            spells: [
+              { name: 'Parola Guaritrice di Massa', source: "Dominio dell'Ordine" },
+              { name: 'Lentezza', source: "Dominio dell'Ordine" },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'compulsione' e 'localizza creatura'.",
+            spells: [
+              { name: 'Compulsione', source: "Dominio dell'Ordine" },
+              { name: 'Localizza Creatura', source: "Dominio dell'Ordine" },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description: "Hai sempre preparati 'comunione' e 'dominare persone'.",
+            spells: [
+              { name: 'Comunione', source: "Dominio dell'Ordine" },
+              { name: 'Dominare Persone', source: "Dominio dell'Ordine" },
+            ],
+          },
+        ],
       },
       'Dominio della Pace': {
         1: [
+          {
+            name: 'Incantesimi di Dominio',
+            description: "Hai sempre preparati 'eroismo' e 'santuario'.",
+            spells: [
+              { name: 'Eroismo', source: 'Dominio della Pace' },
+              { name: 'Santuario', source: 'Dominio della Pace' },
+            ],
+          },
           {
             name: 'Strumento della Pace',
             description:
@@ -457,9 +948,58 @@ export const dndSubclasses = {
             description: 'Come azione, ti muovi e puoi curare le creature che attraversi.',
           },
         ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'aiuto' e 'vincolo protettivo'.",
+            spells: [
+              { name: 'Aiuto', source: 'Dominio della Pace' },
+              { name: 'Vincolo Protettivo', source: 'Dominio della Pace' },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'faro di speranza' e 'inviare'.",
+            spells: [
+              { name: 'Faro di Speranza', source: 'Dominio della Pace' },
+              { name: 'Inviare', source: 'Dominio della Pace' },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'aura di purezza' e 'sfera elastica di otiluke'.",
+            spells: [
+              { name: 'Aura di Purezza', source: 'Dominio della Pace' },
+              { name: 'Sfera Elastica di Otiluke', source: 'Dominio della Pace' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description:
+              "Hai sempre preparati 'ristorare superiore' e 'legame telepatico di rary'.",
+            spells: [
+              { name: 'Ristorare Superiore', source: 'Dominio della Pace' },
+              { name: 'Legame Telepatico di Rary', source: 'Dominio della Pace' },
+            ],
+          },
+        ],
       },
       'Dominio della Tempesta': {
         1: [
+          {
+            name: 'Incantesimi di Dominio',
+            description: "Hai sempre preparati 'nube di nebbia' e 'onda tonante'.",
+            spells: [
+              { name: 'Nube di Nebbia', source: 'Dominio della Tempesta' },
+              { name: 'Onda Tonante', source: 'Dominio della Tempesta' },
+            ],
+          },
           {
             name: 'Competenza Bonus',
             description: 'Ottieni competenza in armature pesanti e armi da guerra.',
@@ -476,12 +1016,61 @@ export const dndSubclasses = {
             description: 'Infliggi il massimo dei danni da fulmine o tuono.',
           },
         ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'folata di vento' e 'frantumare'.",
+            spells: [
+              { name: 'Folata di Vento', source: 'Dominio della Tempesta' },
+              { name: 'Frantumare', source: 'Dominio della Tempesta' },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'richiamare il fulmine' e 'tempesta di nevischio'.",
+            spells: [
+              { name: 'Richiamare il Fulmine', source: 'Dominio della Tempesta' },
+              { name: 'Tempesta di Nevischio', source: 'Dominio della Tempesta' },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'controllare acqua' e 'tempesta di ghiaccio'.",
+            spells: [
+              { name: 'Controllare Acqua', source: 'Dominio della Tempesta' },
+              { name: 'Tempesta di Ghiaccio', source: 'Dominio della Tempesta' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description: "Hai sempre preparati 'onda distruttiva' e 'piaga degli insetti'.",
+            spells: [
+              { name: 'Onda Distruttiva', source: 'Dominio della Tempesta' },
+              { name: 'Piaga degli Insetti', source: 'Dominio della Tempesta' },
+            ],
+          },
+        ],
       },
       "Dominio dell'Inganno": {
         1: [
           {
+            name: 'Incantesimi di Dominio',
+            description: "Hai sempre preparati 'charme su persone' e 'camuffare se stesso'.",
+            spells: [
+              { name: 'Charme su Persone', source: "Dominio dell'Inganno" },
+              { name: 'Camuffare Se Stesso', source: "Dominio dell'Inganno" },
+            ],
+          },
+          {
             name: "Benedizione dell'Ingannatore",
-            description: 'Dai vantaggio alle prove di Furtività a un alleato.',
+            description:
+              'Come azione, puoi toccare una creatura consenziente diversa da te e darle vantaggio alle prove di Destrezza (Furtività).',
           },
         ],
         2: [
@@ -490,9 +1079,57 @@ export const dndSubclasses = {
             description: 'Crei un duplicato illusorio che ti dà vantaggio agli attacchi.',
           },
         ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'immagine speculare' e 'passare senza tracce'.",
+            spells: [
+              { name: 'Immagine Speculare', source: "Dominio dell'Inganno" },
+              { name: 'Passare senza Tracce', source: "Dominio dell'Inganno" },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'intermittenza' e 'dissolvi magie'.",
+            spells: [
+              { name: 'Intermittenza', source: "Dominio dell'Inganno" },
+              { name: 'Dissolvi Magie', source: "Dominio dell'Inganno" },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'porta dimensionale' e 'polimorfia'.",
+            spells: [
+              { name: 'Porta Dimensionale', source: "Dominio dell'Inganno" },
+              { name: 'Polimorfia', source: "Dominio dell'Inganno" },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description: "Hai sempre preparati 'dominare persone' e 'modificare memoria'.",
+            spells: [
+              { name: 'Dominare Persone', source: "Dominio dell'Inganno" },
+              { name: 'Modificare Memoria', source: "Dominio dell'Inganno" },
+            ],
+          },
+        ],
       },
       'Dominio del Crepuscolo': {
         1: [
+          {
+            name: 'Incantesimi di Dominio',
+            description: "Hai sempre preparati 'luminescenza' e 'sonno'.",
+            spells: [
+              { name: 'Luminescenza', source: 'Dominio del Crepuscolo' },
+              { name: 'Sonno', source: 'Dominio del Crepuscolo' },
+            ],
+          },
           {
             name: 'Competenza Bonus',
             description: 'Ottieni competenza in armature pesanti e armi da guerra.',
@@ -510,22 +1147,112 @@ export const dndSubclasses = {
           {
             name: 'Incanalare Divinità: Santuario del Crepuscolo',
             description:
-              'Crei una sfera di crepuscolo che dà a te e ai tuoi alleati PF temporanei o termina un effetto di charme/paura alla fine di ogni loro turno.',
+              'Crei una sfera di crepuscolo che dà a te e ai tuoi alleati PF temporanei o termina un effetto di charme/paura.',
+          },
+        ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'raggio di luna' e 'vedere invisibilità'.",
+            spells: [
+              { name: 'Raggio di Luna', source: 'Dominio del Crepuscolo' },
+              { name: 'Vedere Invisibilità', source: 'Dominio del Crepuscolo' },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'aura di vitalità' e 'capanna di leomund'.",
+            spells: [
+              { name: 'Aura di Vitalità', source: 'Dominio del Crepuscolo' },
+              { name: 'Capanna di Leomund', source: 'Dominio del Crepuscolo' },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'aura di vita' e 'invisibilità superiore'.",
+            spells: [
+              { name: 'Aura di Vita', source: 'Dominio del Crepuscolo' },
+              { name: 'Invisibilità Superiore', source: 'Dominio del Crepuscolo' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description: "Hai sempre preparati 'cerchio di potere' e 'fuorviare'.",
+            spells: [
+              { name: 'Cerchio di Potere', source: 'Dominio del Crepuscolo' },
+              { name: 'Fuorviare', source: 'Dominio del Crepuscolo' },
+            ],
           },
         ],
       },
       'Dominio della Vita': {
         1: [
+          {
+            name: 'Incantesimi di Dominio',
+            description: "Hai sempre preparati 'benedizione' e 'cura ferite'.",
+            spells: [
+              { name: 'Benedizione', source: 'Dominio della Vita' },
+              { name: 'Cura Ferite', source: 'Dominio della Vita' },
+            ],
+          },
           { name: 'Competenza Bonus', description: 'Ottieni competenza nelle armature pesanti.' },
           {
             name: 'Discepolo della Vita',
-            description: 'Gli incantesimi di cura ripristinano PF aggiuntivi.',
+            description:
+              "Gli incantesimi di cura di 1° livello o superiore ripristinano 2 + il livello dell'incantesimo PF aggiuntivi.",
           },
         ],
         2: [
           {
             name: 'Incanalare Divinità: Preservare Vita',
-            description: 'Come azione, ripristini PF pari a 5 volte il tuo livello da chierico.',
+            description:
+              'Come azione, ripristini un ammontare di PF pari a 5 volte il tuo livello da chierico, diviso tra le creature a tua scelta.',
+          },
+        ],
+        3: [
+          {
+            name: 'Incantesimi di Dominio (Liv 3)',
+            description: "Hai sempre preparati 'ristorare inferiore' e 'arma spirituale'.",
+            spells: [
+              { name: 'Ristorare Inferiore', source: 'Dominio della Vita' },
+              { name: 'Arma Spirituale', source: 'Dominio della Vita' },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Dominio (Liv 5)',
+            description: "Hai sempre preparati 'faro di speranza' e 'rianimare'.",
+            spells: [
+              { name: 'Faro di Speranza', source: 'Dominio della Vita' },
+              { name: 'Rianimare', source: 'Dominio della Vita' },
+            ],
+          },
+        ],
+        7: [
+          {
+            name: 'Incantesimi di Dominio (Liv 7)',
+            description: "Hai sempre preparati 'guardiano della fede' e 'interdizione alla morte'.",
+            spells: [
+              { name: 'Guardiano della Fede', source: 'Dominio della Vita' },
+              { name: 'Interdizione alla Morte', source: 'Dominio della Vita' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Dominio (Liv 9)',
+            description: "Hai sempre preparati 'cura ferite di massa' e 'rianimare morti'.",
+            spells: [
+              { name: 'Cura Ferite di Massa', source: 'Dominio della Vita' },
+              { name: 'Rianimare Morti', source: 'Dominio della Vita' },
+            ],
           },
         ],
       },
@@ -555,7 +1282,7 @@ export const dndSubclasses = {
           {
             name: 'Incantesimi del Circolo',
             description:
-              'Ottieni accesso a incantesimi aggiuntivi basati sul tipo di terra scelto.',
+              'Ottieni accesso a incantesimi aggiuntivi basati sul tipo di terra scelto (Artico, Costa, Deserto, Foresta, Montagna, Palude, Sottosuolo).',
           },
         ],
       },
@@ -588,6 +1315,11 @@ export const dndSubclasses = {
       'Circolo delle Spore': {
         2: [
           {
+            name: 'Incantesimi del Circolo',
+            description: "Hai sempre preparati 'tocco gelido'.",
+            spells: [{ name: 'Tocco Gelido', source: 'Circolo delle Spore' }],
+          },
+          {
             name: 'Aura di Spore',
             description: 'Come reazione, infliggi 1d4 danni necrotici a una creatura vicina.',
           },
@@ -595,6 +1327,26 @@ export const dndSubclasses = {
             name: 'Simbiosi Selvatica',
             description:
               "Usi una Forma Selvatica per ottenere PF temporanei e raddoppiare i danni dell'Aura di Spore.",
+          },
+        ],
+        3: [
+          {
+            name: 'Incantesimi del Circolo (Liv 3)',
+            description: "Hai sempre preparati 'cecita/sordita' e 'raggio di indebolimento'.",
+            spells: [
+              { name: 'Cecità/Sordità', source: 'Circolo delle Spore' },
+              { name: 'Raggio di Indebolimento', source: 'Circolo delle Spore' },
+            ],
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi del Circolo (Liv 5)',
+            description: "Hai sempre preparati 'animare morti' e 'nube maleodorante'.",
+            spells: [
+              { name: 'Animare Morti', source: 'Circolo delle Spore' },
+              { name: 'Nube Maleodorante', source: 'Circolo delle Spore' },
+            ],
           },
         ],
       },
@@ -614,8 +1366,6 @@ export const dndSubclasses = {
       },
     },
   },
-  // Incolla questo codice subito dopo il codice della Parte 2, nello stesso file.
-  // Questa parte finale contiene tutte le altre classi
 
   Guerriero: {
     choiceLevel: 3,
@@ -623,14 +1373,15 @@ export const dndSubclasses = {
       'Arciere Arcano': {
         3: [
           {
-            name: 'Tiro Arcano',
-            description:
-              'Impari due opzioni di Tiro Arcano (es. Freccia Esplosiva, Freccia Vincolante) da applicare ai tuoi attacchi con arco.',
-          },
-          {
             name: "Conoscenza dell'Arciere Arcano",
             description:
               "Ottieni competenza in Arcano o Natura e impari un trucchetto ('prestidigitazione' o 'druidismo').",
+            spells: [{ name: 'Prestidigitazione', source: 'Arciere Arcano (o Druidismo)' }],
+          },
+          {
+            name: 'Tiro Arcano',
+            description:
+              'Impari due opzioni di Tiro Arcano (es. Freccia Esplosiva, Freccia Vincolante) da applicare ai tuoi attacchi con arco.',
           },
         ],
       },
@@ -675,7 +1426,11 @@ export const dndSubclasses = {
       },
       'Cavaliere Mistico': {
         3: [
-          { name: 'Incantesimi', description: 'Impari a lanciare incantesimi da mago (INT).' },
+          {
+            name: 'Incantesimi',
+            description:
+              'Impari a lanciare incantesimi da mago (INT). Conosci tre trucchetti e tre incantesimi di 1° livello, di cui due devono essere di abiurazione e/o invocazione.',
+          },
           {
             name: "Legame con l'Arma",
             description:
@@ -720,17 +1475,12 @@ export const dndSubclasses = {
           {
             name: "Orecchio per l'Inganno",
             description:
-              'Se sospetti un inganno, puoi fare una prova di Saggezza (Intuizione) contro una CD fissa di 8 + mod Inganno + competenza del bersaglio per determinare se sta mentendo.',
+              'La tua prova di Saggezza (Intuizione) per determinare se una creatura sta mentendo è considerata un 8 + bonus, se il tiro è inferiore.',
           },
           {
             name: 'Occhio per i Dettagli',
             description:
-              "Puoi usare un'azione bonus per fare una prova di Saggezza (Percezione) per individuare una creatura o un oggetto nascosto o una prova di Intelligenza (Indagare) per decifrare indizi.",
-          },
-          {
-            name: 'Intuizione Penetrante',
-            description:
-              'Quando fai una prova di Saggezza (Intuizione) per determinare se una creatura sta mentendo, hai vantaggio.',
+              "Puoi usare un'azione bonus per fare una prova di Percezione per individuare una creatura o un oggetto nascosto o una prova di Indagare per decifrare indizi.",
           },
         ],
       },
@@ -766,7 +1516,7 @@ export const dndSubclasses = {
           {
             name: 'Gioco di Piedi Fantasioso',
             description:
-              'Se fai un attacco in mischia contro una creatura, essa non può fare attacchi di opportunità contro di te.',
+              'Se fai un attacco in mischia contro una creatura, essa non può fare attacchi di opportunità contro di te per il resto del turno.',
           },
           {
             name: 'Audacia Sfrontata',
@@ -777,10 +1527,15 @@ export const dndSubclasses = {
       },
       'Mistificatore Arcano': {
         3: [
-          { name: 'Incantesimi', description: 'Impari a lanciare incantesimi da mago (INT).' },
+          {
+            name: 'Incantesimi',
+            description:
+              'Impari a lanciare incantesimi da mago (INT). Conosci tre trucchetti e tre incantesimi di 1° livello, di cui due devono essere di ammaliamento e/o illusione.',
+          },
           {
             name: 'Raggiro Magico',
-            description: 'Distrai le creature vicine per dare vantaggio a te o a un alleato.',
+            description:
+              'Come azione, puoi creare una distrazione magica. Le creature a tua scelta entro 9m fanno una prova di Saggezza (Intuizione) contro la CD dei tuoi incantesimi. Se falliscono, hai vantaggio alla tua prossima prova di Destrezza (Rapidità di Mano) contro di loro.',
           },
         ],
       },
@@ -934,6 +1689,12 @@ export const dndSubclasses = {
             name: "Arti dell'Ombra",
             description:
               "Puoi spendere 2 punti Ki per lanciare 'oscurità', 'passo velato', 'silenzio' o 'passare senza tracce'.",
+            spells: [
+              { name: 'Oscurità', source: "Arti dell'Ombra" },
+              { name: 'Passo Velato', source: "Arti dell'Ombra" },
+              { name: 'Silenzio', source: "Arti dell'Ombra" },
+              { name: 'Passare senza Tracce', source: "Arti dell'Ombra" },
+            ],
           },
         ],
       },
@@ -942,7 +1703,7 @@ export const dndSubclasses = {
           {
             name: 'Discepolo degli Elementi',
             description:
-              'Impari discipline elementali che ti permettono di manipolare gli elementi spendendo punti Ki.',
+              'Impari discipline elementali che ti permettono di manipolare gli elementi spendendo punti Ki per lanciare incantesimi.',
           },
         ],
       },
@@ -976,44 +1737,284 @@ export const dndSubclasses = {
       'Giuramento di Devozione': {
         3: [
           {
+            name: 'Incantesimi di Giuramento',
+            description: "Hai sempre preparati 'protezione dal bene e dal male' e 'santuario'.",
+            spells: [
+              { name: 'Protezione dal Bene e dal Male', source: 'Giuramento di Devozione' },
+              { name: 'Santuario', source: 'Giuramento di Devozione' },
+            ],
+          },
+          {
             name: 'Incanalare Divinità',
             description: "Ottieni 'Arma Sacra' (+ mod Carisma al TxC) e 'Scacciare i Sacrileghi'.",
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 5)',
+            description: "Hai sempre preparati 'ristorare inferiore' e 'zona di verità'.",
+            spells: [
+              { name: 'Ristorare Inferiore', source: 'Giuramento di Devozione' },
+              { name: 'Zona di Verità', source: 'Giuramento di Devozione' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 9)',
+            description: "Hai sempre preparati 'faro di speranza' e 'dissolvi magie'.",
+            spells: [
+              { name: 'Faro di Speranza', source: 'Giuramento di Devozione' },
+              { name: 'Dissolvi Magie', source: 'Giuramento di Devozione' },
+            ],
+          },
+        ],
+        13: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 13)',
+            description: "Hai sempre preparati 'guardiano della fede' e 'libertà di movimento'.",
+            spells: [
+              { name: 'Guardiano della Fede', source: 'Giuramento di Devozione' },
+              { name: 'Libertà di Movimento', source: 'Giuramento di Devozione' },
+            ],
+          },
+        ],
+        17: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 17)',
+            description: "Hai sempre preparati 'colpo di fiamma' e 'comunione'.",
+            spells: [
+              { name: 'Colpo di Fiamma', source: 'Giuramento di Devozione' },
+              { name: 'Comunione', source: 'Giuramento di Devozione' },
+            ],
           },
         ],
       },
       'Giuramento degli Antichi': {
         3: [
           {
+            name: 'Incantesimi di Giuramento',
+            description: "Hai sempre preparati 'laccio' e 'parlare con gli animali'.",
+            spells: [
+              { name: 'Laccio', source: 'Giuramento degli Antichi' },
+              { name: 'Parlare con gli Animali', source: 'Giuramento degli Antichi' },
+            ],
+          },
+          {
             name: 'Incanalare Divinità',
             description:
               "Ottieni 'Ira della Natura' (incatena un bersaglio) e 'Scacciare gli Infedeli' (scacci fatati e immondi).",
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 5)',
+            description: "Hai sempre preparati 'passo velato' e 'raggio di luna'.",
+            spells: [
+              { name: 'Passo Velato', source: 'Giuramento degli Antichi' },
+              { name: 'Raggio di Luna', source: 'Giuramento degli Antichi' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 9)',
+            description: "Hai sempre preparati 'crescita vegetale' e 'protezione dall\'energia'.",
+            spells: [
+              { name: 'Crescita Vegetale', source: 'Giuramento degli Antichi' },
+              { name: "Protezione dall'Energia", source: 'Giuramento degli Antichi' },
+            ],
+          },
+        ],
+        13: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 13)',
+            description: "Hai sempre preparati 'pelle di pietra' e 'tempesta di ghiaccio'.",
+            spells: [
+              { name: 'Pelle di Pietra', source: 'Giuramento degli Antichi' },
+              { name: 'Tempesta di Ghiaccio', source: 'Giuramento degli Antichi' },
+            ],
+          },
+        ],
+        17: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 17)',
+            description:
+              "Hai sempre preparati 'comunione con la natura' e 'passare attraverso gli alberi'.",
+            spells: [
+              { name: 'Comunione con la Natura', source: 'Giuramento degli Antichi' },
+              { name: 'Passare Attraverso gli Alberi', source: 'Giuramento degli Antichi' },
+            ],
           },
         ],
       },
       'Giuramento di Vendetta': {
         3: [
           {
+            name: 'Incantesimi di Giuramento',
+            description: "Hai sempre preparati 'anatema' e 'marchio del cacciatore'.",
+            spells: [
+              { name: 'Anatema', source: 'Giuramento di Vendetta' },
+              { name: 'Marchio del Cacciatore', source: 'Giuramento di Vendetta' },
+            ],
+          },
+          {
             name: 'Incanalare Divinità',
             description:
               "Ottieni 'Abiurare Nemico' (spaventi un bersaglio) e 'Voto di Inimicizia' (vantaggio agli attacchi contro una creatura).",
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 5)',
+            description: "Hai sempre preparati 'blocca persona' e 'passo velato'.",
+            spells: [
+              { name: 'Blocca Persona', source: 'Giuramento di Vendetta' },
+              { name: 'Passo Velato', source: 'Giuramento di Vendetta' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 9)',
+            description: "Hai sempre preparati 'protezione dall\'energia' e 'velocità'.",
+            spells: [
+              { name: "Protezione dall'Energia", source: 'Giuramento di Vendetta' },
+              { name: 'Velocità', source: 'Giuramento di Vendetta' },
+            ],
+          },
+        ],
+        13: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 13)',
+            description: "Hai sempre preparati 'esilio' e 'porta dimensionale'.",
+            spells: [
+              { name: 'Esilio', source: 'Giuramento di Vendetta' },
+              { name: 'Porta Dimensionale', source: 'Giuramento di Vendetta' },
+            ],
+          },
+        ],
+        17: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 17)',
+            description: "Hai sempre preparati 'blocca mostri' e 'scrutare'.",
+            spells: [
+              { name: 'Blocca Mostri', source: 'Giuramento di Vendetta' },
+              { name: 'Scrutare', source: 'Giuramento di Vendetta' },
+            ],
           },
         ],
       },
       'Giuramento di Conquista': {
         3: [
           {
+            name: 'Incantesimi di Giuramento',
+            description: "Hai sempre preparati 'armatura di agathys' e 'comando'.",
+            spells: [
+              { name: 'Armatura di Agathys', source: 'Giuramento di Conquista' },
+              { name: 'Comando', source: 'Giuramento di Conquista' },
+            ],
+          },
+          {
             name: 'Incanalare Divinità',
             description:
               "Ottieni 'Presenza Conquistatrice' (spaventi i nemici) e 'Colpo Guidato' (+10 a un tiro di attacco).",
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 5)',
+            description: "Hai sempre preparati 'arma spirituale' e 'blocca persona'.",
+            spells: [
+              { name: 'Arma Spirituale', source: 'Giuramento di Conquista' },
+              { name: 'Blocca Persona', source: 'Giuramento di Conquista' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 9)',
+            description: "Hai sempre preparati 'lentezza' e 'paura'.",
+            spells: [
+              { name: 'Lentezza', source: 'Giuramento di Conquista' },
+              { name: 'Paura', source: 'Giuramento di Conquista' },
+            ],
+          },
+        ],
+        13: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 13)',
+            description: "Hai sempre preparati 'dominare bestie' e 'pelle di pietra'.",
+            spells: [
+              { name: 'Dominare Bestie', source: 'Giuramento di Conquista' },
+              { name: 'Pelle di Pietra', source: 'Giuramento di Conquista' },
+            ],
+          },
+        ],
+        17: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 17)',
+            description: "Hai sempre preparati 'dominare persone' e 'nube mortale'.",
+            spells: [
+              { name: 'Dominare Persone', source: 'Giuramento di Conquista' },
+              { name: 'Nube Mortale', source: 'Giuramento di Conquista' },
+            ],
           },
         ],
       },
       'Giuramento di Redenzione': {
         3: [
           {
+            name: 'Incantesimi di Giuramento',
+            description: "Hai sempre preparati 'santuario' e 'sonno'.",
+            spells: [
+              { name: 'Santuario', source: 'Giuramento di Redenzione' },
+              { name: 'Sonno', source: 'Giuramento di Redenzione' },
+            ],
+          },
+          {
             name: 'Incanalare Divinità',
-            description:
-              "Ottieni 'Rimprovero dell'Emissario' (come reazione, se un nemico danneggia un altro, puoi forzarlo a subire metà di quel danno) e 'Spirito Guerriero' (la tua aura aumenta la CA degli alleati).",
+            description: "Ottieni 'Rimprovero dell'Emissario' e 'Spirito Guerriero'.",
+          },
+        ],
+        5: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 5)',
+            description: "Hai sempre preparati 'calmare emozioni' e 'blocca persona'.",
+            spells: [
+              { name: 'Calmare Emozioni', source: 'Giuramento di Redenzione' },
+              { name: 'Blocca Persona', source: 'Giuramento di Redenzione' },
+            ],
+          },
+        ],
+        9: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 9)',
+            description: "Hai sempre preparati 'contromagia' e 'trama ipnotica'.",
+            spells: [
+              { name: 'Contromagia', source: 'Giuramento di Redenzione' },
+              { name: 'Trama Ipnotica', source: 'Giuramento di Redenzione' },
+            ],
+          },
+        ],
+        13: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 13)',
+            description: "Hai sempre preparati 'sfera elastica di otiluke' e 'pelle di pietra'.",
+            spells: [
+              { name: 'Sfera Elastica di Otiluke', source: 'Giuramento di Redenzione' },
+              { name: 'Pelle di Pietra', source: 'Giuramento di Redenzione' },
+            ],
+          },
+        ],
+        17: [
+          {
+            name: 'Incantesimi di Giuramento (Liv 17)',
+            description: "Hai sempre preparati 'blocca mostri' e 'muro di forza'.",
+            spells: [
+              { name: 'Blocca Mostri', source: 'Giuramento di Redenzione' },
+              { name: 'Muro di Forza', source: 'Giuramento di Redenzione' },
+            ],
           },
         ],
       },
@@ -1043,6 +2044,11 @@ export const dndSubclasses = {
       'Cacciatore di Mostri': {
         3: [
           {
+            name: "Incantesimi dell'Uccisore",
+            description: "Hai sempre preparati 'protezione dal bene e dal male'.",
+            spells: [{ name: 'Protezione dal Bene e dal Male', source: 'Cacciatore di Mostri' }],
+          },
+          {
             name: 'Conoscenza del Cacciatore',
             description:
               'Ottieni un dado di superiorità (d6) per scoprire le vulnerabilità di un nemico.',
@@ -1053,9 +2059,21 @@ export const dndSubclasses = {
               'Come azione bonus, marchi una creatura. Infliggi 1d6 danni extra contro di essa.',
           },
         ],
+        5: [
+          {
+            name: "Incantesimi dell'Uccisore (Liv 5)",
+            description: "Hai sempre preparati 'zona di verità'.",
+            spells: [{ name: 'Zona di Verità', source: 'Cacciatore di Mostri' }],
+          },
+        ],
       },
       "Errante dell'Orizzonte": {
         3: [
+          {
+            name: "Incantesimi dell'Errante",
+            description: "Hai sempre preparati 'protezione dal bene e dal male'.",
+            spells: [{ name: 'Protezione dal Bene e dal Male', source: "Errante dell'Orizzonte" }],
+          },
           {
             name: 'Individuazione Portali',
             description: 'Puoi percepire la presenza di portali planari.',
@@ -1066,14 +2084,32 @@ export const dndSubclasses = {
               'Come azione bonus, puoi infliggere 1d8 danni da forza extra e rendere il danno magico.',
           },
         ],
+        5: [
+          {
+            name: "Incantesimi dell'Errante (Liv 5)",
+            description: "Hai sempre preparati 'passo velato'.",
+            spells: [{ name: 'Passo Velato', source: "Errante dell'Orizzonte" }],
+          },
+        ],
       },
       'Custode delle Profondità': {
         3: [
-          { name: 'Magia Aggiuntiva', description: "Impari 'immagine speculare'." },
+          {
+            name: 'Magia Aggiuntiva',
+            description: "Impari 'immagine speculare'.",
+            spells: [{ name: 'Immagine Speculare', source: 'Custode delle Profondità' }],
+          },
           {
             name: 'Tentacolo delle Profondità',
             description:
               'Come azione bonus, puoi manifestare un tentacolo spettrale che attacca i tuoi nemici.',
+          },
+        ],
+        5: [
+          {
+            name: 'Magia Aggiuntiva (Liv 5)',
+            description: "Impari 'silenzio'.",
+            spells: [{ name: 'Silenzio', source: 'Custode delle Profondità' }],
           },
         ],
       },
@@ -1084,7 +2120,11 @@ export const dndSubclasses = {
     options: {
       'Discendenza Draconica': {
         1: [
-          { name: 'Antenato Draconico', description: 'Scegli un tipo di drago come antenato.' },
+          {
+            name: 'Antenato Draconico',
+            description:
+              'Scegli un tipo di drago come antenato, ottieni resistenza e parli il draconico.',
+          },
           {
             name: 'Resilienza Draconica',
             description:
@@ -1111,6 +2151,7 @@ export const dndSubclasses = {
             name: 'Favore Divino',
             description:
               'Scegli un allineamento (bene, male, legge, caos, neutralità) e ottieni un incantesimo associato.',
+            spells: [{ name: 'Cura Ferite (o Infliggi Ferite)', source: 'Anima Divina' }],
           },
           {
             name: 'Magia Potenziata',
@@ -1121,6 +2162,11 @@ export const dndSubclasses = {
       },
       "Patto dell'Ombra": {
         1: [
+          {
+            name: "Incantesimi dell'Ombra",
+            description: "Impari 'illusione minore'.",
+            spells: [{ name: 'Illusione Minore', source: "Patto dell'Ombra" }],
+          },
           {
             name: "Occhi dell'Oscurità",
             description:
@@ -1139,6 +2185,10 @@ export const dndSubclasses = {
             name: 'Incantesimi Psionici',
             description:
               "Ottieni incantesimi bonus come 'dissonanza sussurrante' e 'tentacoli di Hadar'.",
+            spells: [
+              { name: 'Dissonanza Sussurrante', source: 'Mente Aberrante' },
+              { name: 'Tentacoli di Hadar', source: 'Mente Aberrante' },
+            ],
           },
           {
             name: 'Parole Telepatiche',
@@ -1154,6 +2204,15 @@ export const dndSubclasses = {
       'Il Grande Antico': {
         1: [
           {
+            name: 'Lista Incantesimi Espansa',
+            description:
+              "Ottieni accesso a 'risata incontenibile di Tasha' e 'dissonanza sussurrante'.",
+            spells: [
+              { name: 'Risata Incontenibile di Tasha', source: 'Il Grande Antico' },
+              { name: 'Dissonanza Sussurrante', source: 'Il Grande Antico' },
+            ],
+          },
+          {
             name: 'Mente Risvegliata',
             description: 'Puoi comunicare telepaticamente con qualsiasi creatura entro 9m.',
           },
@@ -1161,6 +2220,14 @@ export const dndSubclasses = {
       },
       "L'Immondo": {
         1: [
+          {
+            name: 'Lista Incantesimi Espansa',
+            description: "Ottieni accesso a 'mani brucianti' e 'comando'.",
+            spells: [
+              { name: 'Mani Brucianti', source: "L'Immondo" },
+              { name: 'Comando', source: "L'Immondo" },
+            ],
+          },
           {
             name: "Benedizione dell'Oscuro",
             description: 'Quando riduci una creatura ostile a 0 PF, ottieni PF temporanei.',
@@ -1170,6 +2237,14 @@ export const dndSubclasses = {
       'Il Signore Fatato': {
         1: [
           {
+            name: 'Lista Incantesimi Espansa',
+            description: "Ottieni accesso a 'charme su persone' e 'luminescenza'.",
+            spells: [
+              { name: 'Charme su Persone', source: 'Il Signore Fatato' },
+              { name: 'Luminescenza', source: 'Il Signore Fatato' },
+            ],
+          },
+          {
             name: 'Presenza Fatata',
             description: 'Come azione, puoi affascinare o spaventare le creature vicine.',
           },
@@ -1177,6 +2252,14 @@ export const dndSubclasses = {
       },
       'Il Celestiale': {
         1: [
+          {
+            name: 'Lista Incantesimi Espansa',
+            description: "Ottieni accesso a 'cura ferite' e 'parola guaritrice'.",
+            spells: [
+              { name: 'Cura Ferite', source: 'Il Celestiale' },
+              { name: 'Parola Guaritrice', source: 'Il Celestiale' },
+            ],
+          },
           { name: 'Trucchetti Espansi', description: "Impari 'luce' e 'fiamma sacra'." },
           {
             name: 'Luce Guaritrice',
@@ -1187,6 +2270,14 @@ export const dndSubclasses = {
       },
       'La Lama Maledetta (Hexblade)': {
         1: [
+          {
+            name: 'Lista Incantesimi Espansa',
+            description: "Ottieni accesso a 'ira' e 'scudo'.",
+            spells: [
+              { name: 'Ira', source: 'Lama Maledetta' },
+              { name: 'Scudo', source: 'Lama Maledetta' },
+            ],
+          },
           {
             name: 'Maledizione della Lama Maledetta',
             description:

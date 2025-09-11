@@ -7,6 +7,8 @@ defineProps({
   baseClassFeatures: { type: Array, required: true },
   subclassFeatures: { type: Array, required: true },
   chosenSubclasses: { type: Array, required: true },
+  chosenFeats: { type: Array, default: () => [] }, // <-- AGGIUNGI QUESTA RIGA
+
   armorProficiencies: { type: Array, required: true },
   weaponProficiencies: { type: Array, required: true },
   character: { type: Object, required: true },
@@ -318,6 +320,24 @@ const modalTitle = computed(() => {
           </ul>
         </div>
       </div>
+
+      <div class="column">
+        <div class="sub-section">
+          <div class="column-header">
+            <h4>Talenti</h4>
+          </div>
+          <ul class="feature-list">
+            <li v-for="feat in chosenFeats" :key="feat.name">
+              <div class="feature-content">
+                <strong>{{ feat.name }}:</strong> {{ feat.description }}
+              </div>
+            </li>
+            <li v-if="!chosenFeats || !chosenFeats.length" class="placeholder">
+              Nessun talento selezionato.
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <div v-if="chosenSubclasses.length > 0" class="subclass-spotlight">
@@ -359,7 +379,7 @@ const modalTitle = computed(() => {
 <style scoped>
 .main-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr); /* 4 colonne su schermi grandi */
   gap: 2rem;
   align-items: flex-start;
 }
@@ -503,10 +523,17 @@ h4 {
 }
 
 /* --- REGOLE RESPONSIVE AGGIUNTE --- */
+/* --- REGOLE RESPONSIVE AGGIUNTE E MODIFICATE --- */
+@media (max-width: 1200px) {
+  .main-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 colonne su tablet */
+  }
+}
+
 @media (max-width: 768px) {
   .main-grid {
-    grid-template-columns: 1fr; /* Le 3 colonne diventano 1 */
-    gap: 1.5rem; /* Riduciamo lo spazio tra le sezioni */
+    grid-template-columns: 1fr; /* 1 colonna su mobile */
+    gap: 1.5rem;
   }
 }
 .custom-feature {

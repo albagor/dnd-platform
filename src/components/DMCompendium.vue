@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { compendiumData } from '@/data/dmCompendiumData.js'
+import { compendiumData as baseCompendiumData } from '@/data/dmCompendiumData.js'
 import { auth, db } from '@/firebaseConfig'
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
 import { useToast } from 'vue-toastification'
@@ -8,54 +8,126 @@ import { useAdventureStore } from '@/stores/adventureStore'
 import { storeToRefs } from 'pinia'
 import MonsterDetails from './MonsterDetails.vue'
 import CharacterStatBlock from './CharacterStatBlock.vue'
-import ItemDetails from './ItemDetails.vue' // <-- 1. IMPORTA IL COMPONENTE MANCANTE
+import ItemDetails from './ItemDetails.vue'
 
 const toast = useToast()
 const adventureStore = useAdventureStore()
 const { adventuresList } = storeToRefs(adventureStore)
 
-// Stato per la vista e le regole
+// Stato per la vista (Regole Rapide / Il Mio Mondo)
 const currentView = ref('rules')
+
+// --- LOGICA E STATO PER "REGOLE RAPIDE" ---
 const searchTerm = ref('')
 const openCategories = ref({})
+const customRules = ref([]) // Conterrà SOLO le regole/categorie personalizzate
+let rulesListener = null
 
-// Stato per l'archivio "Il Mio Mondo"
+// Combina le regole base (fisse) con quelle personalizzate (da Firestore)
+const combinedRules = computed(() => {
+  const base = JSON.parse(JSON.stringify(baseCompendiumData))
+  base.forEach((cat) => cat.rules.forEach((rule) => (rule.isCustom = false))) // Assicura che le base non siano custom
+
+  const custom = customRules.value.map((category) => ({
+    ...category,
+    isCustom: true,
+    rules: category.rules.map((rule) => ({ ...rule, isCustom: true })),
+  }))
+
+  return [...base, ...custom]
+})
+
+// Filtra la lista combinata in base alla ricerca
+const filteredData = computed(() => {
+  if (!searchTerm.value) return combinedRules.value
+  const lower = searchTerm.value.toLowerCase()
+  return combinedRules.value
+    .map((cat) => ({
+      ...cat,
+      rules: cat.rules.filter(
+        (rule) =>
+          rule.name.toLowerCase().includes(lower) || rule.description.toLowerCase().includes(lower),
+      ),
+    }))
+    .filter((cat) => cat.rules.length > 0)
+})
+
+// --- LOGICA E STATO PER "IL MIO MONDO" (IL TUO CODICE, RIPRISTINATO) ---
 const lorebook = ref({ groups: [] })
 const newGroupName = ref('')
 let lorebookListener = null
-
-// Stato per la modale "Aggiungi Elemento"
 const isAddItemModalOpen = ref(false)
 const currentGroupForAdding = ref(null)
 const selectedAdventureId = ref(null)
 const adventureDetails = ref(null)
 const itemsToAdd = ref([])
-
-// Stato per la modale "Dettagli Elemento"
 const isMonsterDetailsModalOpen = ref(false)
 const selectedMonsterForModal = ref(null)
-const isItemDetailsModalOpen = ref(false) // <-- 2. AGGIUNGI STATO
-const selectedItemForModal = ref(null) // <-- 2. AGGIUNGI STATO
+const isItemDetailsModalOpen = ref(false)
+const selectedItemForModal = ref(null)
 
-onMounted(() => {
-  compendiumData.forEach((cat) => {
-    openCategories.value[cat.category] = true
-  })
-  if (auth.currentUser) {
-    const docRef = doc(db, 'lorebooks', auth.currentUser.uid)
-    lorebookListener = onSnapshot(docRef, (docSnap) => {
-      lorebook.value = docSnap.exists() ? docSnap.data() : { groups: [] }
-    })
+// --- FUNZIONI DI GESTIONE ---
+
+// Funzioni per REGOLE RAPIDE
+async function saveCustomRules() {
+  if (!auth.currentUser) return
+  const docRef = doc(db, 'compendiums', auth.currentUser.uid)
+  try {
+    await setDoc(docRef, { rules: customRules.value })
+  } catch (error) {
+    console.error('Errore salvataggio compendio:', error)
+    toast.error('Errore nel salvataggio delle regole personali.')
   }
-  if (adventuresList.value.length === 0) {
-    adventureStore.subscribeToAdventures()
+}
+
+let debounceTimer = null
+watch(
+  customRules,
+  () => {
+    clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(saveCustomRules, 1500)
+  },
+  { deep: true },
+)
+
+function addCustomCategory() {
+  const newCategoryName = prompt('Nome della nuova categoria personale:')
+  if (
+    newCategoryName &&
+    newCategoryName.trim() !== '' &&
+    !customRules.value.some((c) => c.category === newCategoryName)
+  ) {
+    customRules.value.unshift({ category: newCategoryName, rules: [] })
   }
-})
+}
+function removeCustomCategory(categoryToRemove) {
+  if (
+    confirm(
+      `Sei sicuro di voler eliminare la categoria "${categoryToRemove.category}" e tutte le sue regole?`,
+    )
+  ) {
+    customRules.value = customRules.value.filter((c) => c !== categoryToRemove)
+  }
+}
+function addRule(category) {
+  let targetCategory = customRules.value.find((c) => c.category === category.category)
+  if (!targetCategory) {
+    targetCategory = { category: category.category, rules: [] }
+    customRules.value.unshift(targetCategory)
+  }
+  targetCategory.rules.unshift({ name: 'Nuova Regola', description: 'Descrizione...' })
+}
+function removeRule(category, ruleToRemove) {
+  let targetCategory = customRules.value.find((c) => c.category === category.category)
+  if (targetCategory) {
+    targetCategory.rules = targetCategory.rules.filter((r) => r !== ruleToRemove)
+  }
+}
+function toggleCategory(categoryName) {
+  openCategories.value[categoryName] = !openCategories.value[categoryName]
+}
 
-onUnmounted(() => {
-  if (lorebookListener) lorebookListener()
-})
-
+// Funzioni per IL MIO MONDO (IL TUO CODICE, RIPRISTINATO)
 async function saveLorebook() {
   if (!auth.currentUser) return
   const docRef = doc(db, 'lorebooks', auth.currentUser.uid)
@@ -66,7 +138,6 @@ async function saveLorebook() {
     toast.error("Errore nel salvataggio dell'archivio.")
   }
 }
-
 function addGroup() {
   if (!newGroupName.value.trim()) return
   if (!lorebook.value.groups) lorebook.value.groups = []
@@ -74,14 +145,12 @@ function addGroup() {
   newGroupName.value = ''
   saveLorebook()
 }
-
 function removeGroup(groupId) {
   if (confirm('Sei sicuro di voler eliminare questo gruppo e tutti i suoi collegamenti?')) {
     lorebook.value.groups = lorebook.value.groups.filter((group) => group.id !== groupId)
     saveLorebook()
   }
 }
-
 function removeItemFromGroup(group, itemToRemove) {
   const groupIndex = lorebook.value.groups.findIndex((g) => g.id === group.id)
   if (groupIndex === -1) return
@@ -91,7 +160,6 @@ function removeItemFromGroup(group, itemToRemove) {
   lorebook.value.groups[groupIndex].items = updatedItems
   saveLorebook()
 }
-
 async function openAddItemModal(group) {
   currentGroupForAdding.value = group
   selectedAdventureId.value = null
@@ -99,7 +167,6 @@ async function openAddItemModal(group) {
   itemsToAdd.value = []
   isAddItemModalOpen.value = true
 }
-
 watch(selectedAdventureId, async (newId) => {
   if (newId) {
     const advDoc = await getDoc(doc(db, 'adventures', newId))
@@ -118,14 +185,12 @@ watch(selectedAdventureId, async (newId) => {
     adventureDetails.value = null
   }
 })
-
 const itemCategories = computed(() => {
   if (!adventureDetails.value) return []
   return ['ambienti', 'png', 'mostri', 'tesori', 'mappe', 'immagini'].filter(
     (cat) => adventureDetails.value[cat] && adventureDetails.value[cat].length > 0,
   )
 })
-
 function toggleItemSelection(item, adventureId, type, isSelected) {
   const itemReference = { itemId: item.id, adventureId: adventureId, name: item.name, type: type }
   if (isSelected) {
@@ -136,7 +201,6 @@ function toggleItemSelection(item, adventureId, type, isSelected) {
     itemsToAdd.value = itemsToAdd.value.filter((i) => i.itemId !== item.id)
   }
 }
-
 function addSelectedItemsToGroup() {
   const group = lorebook.value.groups.find((g) => g.id === currentGroupForAdding.value.id)
   if (!group) return
@@ -149,7 +213,6 @@ function addSelectedItemsToGroup() {
   saveLorebook()
   isAddItemModalOpen.value = false
 }
-
 async function openLinkedItem(item) {
   const advDoc = await getDoc(doc(db, 'adventures', item.adventureId))
   if (advDoc.exists()) {
@@ -157,13 +220,10 @@ async function openLinkedItem(item) {
     if (adventureData[item.type] && Array.isArray(adventureData[item.type])) {
       const fullItem = adventureData[item.type].find((i) => i.id === item.itemId)
       if (fullItem) {
-        // --- LOGICA DI SMISTAMENTO ---
         if (fullItem.ability_scores) {
-          // È un Mostro o un PNG
           selectedMonsterForModal.value = fullItem
           isMonsterDetailsModalOpen.value = true
         } else {
-          // È un Ambiente, Tesoro, ecc.
           selectedItemForModal.value = fullItem
           isItemDetailsModalOpen.value = true
         }
@@ -171,23 +231,41 @@ async function openLinkedItem(item) {
     }
   }
 }
-const filteredData = computed(() => {
-  if (!searchTerm.value) return compendiumData
-  const lowerCaseSearch = searchTerm.value.toLowerCase()
-  return compendiumData
-    .map((category) => {
-      const filteredRules = category.rules.filter(
-        (rule) =>
-          rule.name.toLowerCase().includes(lowerCaseSearch) ||
-          rule.description.toLowerCase().includes(lowerCaseSearch),
-      )
-      return { ...category, rules: filteredRules }
+
+// --- GESTIONE ONMOUNTED / ONUNMOUNTED UNIFICATA ---
+onMounted(() => {
+  baseCompendiumData.forEach((cat) => {
+    openCategories.value[cat.category] = true
+  })
+  if (auth.currentUser) {
+    const uid = auth.currentUser.uid
+    // Listener per Lorebook
+    const lorebookDocRef = doc(db, 'lorebooks', uid)
+    lorebookListener = onSnapshot(lorebookDocRef, (docSnap) => {
+      lorebook.value = docSnap.exists() ? docSnap.data() : { groups: [] }
     })
-    .filter((category) => category.rules.length > 0)
+    // Listener per Compendio Personale
+    const rulesDocRef = doc(db, 'compendiums', uid)
+    rulesListener = onSnapshot(rulesDocRef, (docSnap) => {
+      if (docSnap.exists() && docSnap.data().rules) {
+        customRules.value = docSnap.data().rules
+        customRules.value.forEach((cat) => {
+          openCategories.value[cat.category] = true
+        })
+      } else {
+        customRules.value = []
+      }
+    })
+  }
+  if (adventuresList.value.length === 0) {
+    adventureStore.subscribeToAdventures()
+  }
 })
-function toggleCategory(categoryName) {
-  openCategories.value[categoryName] = !openCategories.value[categoryName]
-}
+
+onUnmounted(() => {
+  if (lorebookListener) lorebookListener()
+  if (rulesListener) rulesListener()
+})
 </script>
 
 <template>
@@ -207,8 +285,73 @@ function toggleCategory(categoryName) {
       <div class="search-bar">
         <input type="text" v-model="searchTerm" placeholder="Cerca una regola..." />
       </div>
+
+      <div class="add-category-container">
+        <button @click="addCustomCategory" class="add-category-btn">
+          + Aggiungi Categoria Personale
+        </button>
+      </div>
+
       <div class="compendium-grid">
-        <div v-for="category in filteredData" :key="category.category" class="category-section box">
+        <div
+          v-for="category in filteredData.filter((c) => c.isCustom)"
+          :key="category.category"
+          class="category-section box custom-category"
+        >
+          <div class="category-header" @click="toggleCategory(category.category)">
+            <input
+              type="text"
+              v-model="category.category"
+              @click.stop
+              class="category-title-input"
+              placeholder="Nome Categoria"
+            />
+            <div class="header-buttons">
+              <button
+                @click.stop="removeCustomCategory(category)"
+                class="delete-category-btn"
+                title="Elimina Categoria"
+              >
+                🗑️
+              </button>
+              <span class="toggle-icon">{{ openCategories[category.category] ? '▼' : '▶' }}</span>
+            </div>
+          </div>
+          <div v-if="openCategories[category.category]">
+            <div v-for="(rule, index) in category.rules" :key="index" class="rule-block">
+              <div class="rule-header">
+                <input
+                  type="text"
+                  v-model="rule.name"
+                  class="rule-name-input"
+                  placeholder="Nome Regola"
+                />
+                <button
+                  @click.stop="removeRule(category, rule)"
+                  class="remove-rule-btn"
+                  title="Elimina Regola"
+                >
+                  ×
+                </button>
+              </div>
+              <textarea
+                v-model="rule.description"
+                class="rule-description-textarea"
+                placeholder="Descrizione della regola..."
+                rows="3"
+              ></textarea>
+            </div>
+            <button @click="addRule(category)" class="add-rule-to-category-btn">
+              + Aggiungi Nuova Regola
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-for="category in filteredData.filter((c) => !c.isCustom)"
+          :key="category.category"
+          class="category-section box"
+        >
           <div class="category-header" @click="toggleCategory(category.category)">
             <h2>{{ category.category }}</h2>
             <span class="toggle-icon">{{ openCategories[category.category] ? '▼' : '▶' }}</span>
@@ -218,10 +361,14 @@ function toggleCategory(categoryName) {
               <h3>{{ rule.name }}</h3>
               <p v-html="rule.description"></p>
             </div>
+            <button @click="addRule(category)" class="add-rule-to-category-btn">
+              + Aggiungi Regola Personale a Questa Categoria
+            </button>
           </div>
         </div>
       </div>
-      <div v-if="filteredData.length === 0" class="no-results">
+
+      <div v-if="filteredData.length === 0 && searchTerm" class="no-results">
         <p>Nessuna regola trovata per "{{ searchTerm }}"</p>
       </div>
     </div>
@@ -240,7 +387,6 @@ function toggleCategory(categoryName) {
           <button @click="addGroup">Crea Gruppo</button>
         </div>
       </div>
-
       <div v-for="group in lorebook.groups" :key="group.id" class="group-card box">
         <div class="group-header">
           <h3>{{ group.name }}</h3>
@@ -277,7 +423,6 @@ function toggleCategory(categoryName) {
     <div v-if="isAddItemModalOpen" class="modal-overlay" @click.self="isAddItemModalOpen = false">
       <div class="modal-content large">
         <h3>Collega Elementi a: {{ currentGroupForAdding.name }}</h3>
-
         <div class="adventure-selector">
           <label>Scegli un'avventura:</label>
           <select v-model="selectedAdventureId">
@@ -287,7 +432,6 @@ function toggleCategory(categoryName) {
             </option>
           </select>
         </div>
-
         <div v-if="adventureDetails" class="item-selection-grid">
           <div v-for="category in itemCategories" :key="category" class="item-category">
             <h4>{{ category }}</h4>
@@ -311,14 +455,12 @@ function toggleCategory(categoryName) {
             </ul>
           </div>
         </div>
-
         <div class="modal-actions">
           <button @click="isAddItemModalOpen = false" class="btn-secondary">Annulla</button>
           <button @click="addSelectedItemsToGroup" class="btn-primary">Aggiungi Selezionati</button>
         </div>
       </div>
     </div>
-
     <MonsterDetails
       v-if="isMonsterDetailsModalOpen"
       :monster="selectedMonsterForModal"
@@ -333,6 +475,7 @@ function toggleCategory(categoryName) {
 </template>
 
 <style scoped>
+/* Stili principali */
 .compendium-container {
   width: 100%;
   max-width: 1200px;
@@ -358,6 +501,8 @@ h1 {
   padding-bottom: 1rem;
   margin-bottom: 2rem;
 }
+
+/* Stili specifici per questo componente */
 .view-switcher {
   display: flex;
   gap: 10px;
@@ -400,7 +545,7 @@ h1 {
   align-items: center;
   cursor: pointer;
   margin: -1.5rem -1.5rem 1rem -1.5rem;
-  padding: 1.5rem;
+  padding: 1rem 1.5rem;
 }
 .category-header:hover {
   background-color: #f8f9fa;
@@ -409,9 +554,34 @@ h1 {
   margin: 0;
   font-family: serif;
   color: #a04000;
-  border-bottom: none;
-  padding-bottom: 0;
-  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.custom-badge {
+  font-size: 0.6em;
+  background-color: #8e44ad;
+  color: white;
+  padding: 2px 5px;
+  border-radius: 3px;
+  vertical-align: middle;
+  font-family: sans-serif;
+  font-weight: normal;
+}
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.delete-category-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5em;
+  color: #999;
+}
+.delete-category-btn:hover {
+  color: #e74c3c;
 }
 .toggle-icon {
   font-size: 1.5em;
@@ -422,12 +592,25 @@ h1 {
   padding-left: 10px;
   border-left: 3px solid #f0e6d2;
 }
-.rule-block:last-child {
-  margin-bottom: 0;
+.rule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
 }
 .rule-block h3 {
-  margin: 0 0 5px 0;
+  margin: 0;
   font-size: 1.1em;
+}
+.remove-rule-btn {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  color: #ccc;
+  cursor: pointer;
+}
+.remove-rule-btn:hover {
+  color: #e74c3c;
 }
 .rule-block p {
   margin: 0;
@@ -438,6 +621,96 @@ h1 {
   font-style: italic;
   color: #888;
   margin-top: 2rem;
+}
+.section-separator {
+  border: 0;
+  height: 1px;
+  background-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0),
+    rgba(0, 0, 0, 0.1),
+    rgba(0, 0, 0, 0)
+  );
+  margin: 2rem 0;
+}
+.custom-category {
+  border-left: 4px solid #8e44ad;
+}
+.category-title-input {
+  font-family: serif;
+  color: #8e44ad;
+  font-size: 1.5em;
+  font-weight: bold;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  padding: 4px;
+  width: 100%;
+}
+.category-title-input:focus {
+  border-color: #ccc;
+  background-color: #fafafa;
+  outline: none;
+}
+.rule-name-input {
+  font-size: 1.1em;
+  font-weight: bold;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  padding: 4px;
+  width: 100%;
+  font-family: inherit;
+}
+.rule-name-input:focus {
+  border-color: #3498db;
+  background-color: #f8f9fa;
+  outline: none;
+}
+.rule-description-textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+.rule-description-textarea:focus {
+  border-color: #3498db;
+  background-color: #f8f9fa;
+  outline: none;
+}
+.add-rule-to-category-btn {
+  background: none;
+  border: 1px dashed #ccc;
+  color: #888;
+  width: 100%;
+  padding: 8px;
+  margin-top: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.add-rule-to-category-btn:hover {
+  background-color: #f8f9fa;
+  color: #333;
+}
+.add-category-container {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+}
+.add-category-btn {
+  background-color: #34495e;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 1em;
+  border-radius: 5px;
+  cursor: pointer;
 }
 .add-group-box {
   background-color: #e8f6fd;

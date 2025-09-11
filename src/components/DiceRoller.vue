@@ -6,12 +6,12 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { auth } from '@/firebaseConfig'
 import { onAuthStateChanged } from 'firebase/auth'
 import { storeToRefs } from 'pinia'
-import { useToast } from 'vue-toastification' // <-- RIGA MANCANTE, AGGIUNTA QUI
+import { useToast } from 'vue-toastification'
 
 const diceStore = useDiceStore()
 const adventureStore = useAdventureStore()
 const sessionStore = useSessionStore()
-const toast = useToast() // Inizializza il toast una volta sola
+const toast = useToast()
 
 const { activeAdventureId: dmAdventureId } = storeToRefs(adventureStore)
 const { joinedSession: playerSession } = storeToRefs(sessionStore)
@@ -23,6 +23,7 @@ const activeAdventureId = computed(() => {
 })
 
 const isUserReady = ref(false)
+const modifier = ref(0) // NUOVA VARIABILE PER IL MODIFICATORE
 
 onMounted(() => {
   onAuthStateChanged(auth, (user) => {
@@ -39,6 +40,7 @@ const lastResult = computed(() => {
   return diceStore.diceHistory.length > 0 ? diceStore.diceHistory[0] : null
 })
 
+// FUNZIONE rollDice MODIFICATA
 function rollDice(sides) {
   if (!isUserReady.value) {
     toast.error('Devi essere autenticato per tirare i dadi!')
@@ -49,8 +51,15 @@ function rollDice(sides) {
     return
   }
 
-  const result = Math.floor(Math.random() * sides) + 1
-  diceStore.addRoll(sides, result, `Tiro d${sides}`, activeAdventureId.value)
+  const diceResult = Math.floor(Math.random() * sides) + 1
+  const currentModifier = modifier.value || 0 // Assicura che sia un numero
+  const total = diceResult + currentModifier
+
+  const modifierString =
+    currentModifier >= 0 ? `+ ${currentModifier}` : `- ${Math.abs(currentModifier)}`
+  const description = `Tiro d${sides}: ${total} (Dado: ${diceResult} ${modifierString})`
+
+  diceStore.addRoll(sides, total, description, activeAdventureId.value)
 }
 </script>
 
@@ -68,6 +77,11 @@ function rollDice(sides) {
     </div>
 
     <h2>Ultimo Risultato: {{ lastResult ? lastResult.result : '...' }}</h2>
+
+    <div class="modifier-section">
+      <label for="modifier-input">Modificatore</label>
+      <input id="modifier-input" type="number" v-model.number="modifier" />
+    </div>
 
     <div class="dice-tray">
       <button @click="rollDice(4)" :disabled="!isUserReady">Tira un d4</button>
@@ -160,5 +174,26 @@ button:hover {
 .history li.player-roll {
   background-color: #2c3e50;
   border-left: 3px solid #3498db;
+}
+/* Aggiungi questo in fondo allo <style scoped> */
+.modifier-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1rem;
+  font-size: 1.2em;
+}
+
+.modifier-section input {
+  width: 60px;
+  padding: 5px;
+  text-align: center;
+  font-size: 1.1em;
+  font-weight: bold;
+  border: 1px solid #555;
+  background-color: #1a1a1a;
+  color: white;
+  border-radius: 4px;
 }
 </style>
