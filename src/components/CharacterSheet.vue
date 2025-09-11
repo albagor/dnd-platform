@@ -206,7 +206,7 @@ const skillAbilityMap = {
 
   performance: 'charisma',
 
-  persuasion: 'persuasion',
+  persuasion: 'charisma',
 
   religion: 'intelligence',
 

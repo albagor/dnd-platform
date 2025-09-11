@@ -60,6 +60,12 @@ export const dndFeats = [
       "Nel tuo turno, quando metti a segno un colpo critico con un'arma da mischia o riduci una creatura a 0 punti ferita, puoi effettuare un attacco con un'arma da mischia come azione bonus. Prima di effettuare un attacco con un'arma pesante in cui sei competente, puoi scegliere di subire una penalità di -5 al tiro per colpire. Se l'attacco colpisce, aggiungi +10 al danno dell'attacco.",
   },
   {
+    name: 'Maestro delle Armi Inestate',
+    prerequisite: "Competenza con almeno un'arma pesante",
+    description:
+      'Durante il tuo turno, quando, con un’arma da mischia, ottieni un colpo critico o riduci una creatura a 0 punti ferita, puoi effettuare un attacco con arma da mischia come azione bonus. Prima di effettuare un attacco da mischia con un’arma pesante in cui sei competente, puoi decidere di assumere una penalità di -5 al tiro di attacco. Se l’attacco colpisce, sommi +10 al danno dell’attacco.',
+  },
+  {
     name: 'Resiliente',
     prerequisite: 'Nessuno',
     description:

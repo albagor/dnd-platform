@@ -5753,6 +5753,23 @@ export const dndSpells = [
     source: 'PHB',
   },
   {
+    name: 'Marchio del cacciatore',
+    level: 1,
+    school: 'Divinazione',
+    casting_time: '1 azione',
+    range: '27  metri',
+    components: ['V'],
+    duration: 'Concentrazione, fino a 1 ora',
+    concentration: true,
+    ritual: false,
+    description:
+      "L'incantatore sceglie una creatura entro gittata e che egli sia in grado di vedere e la marchia misticamente come sua preda. Finché l'incantesimo non termina, l'incantatore infligge 1d6 danni extra al bersaglio ogni volta che lo colpisce con un attacco con un'arma e dispone vantaggio ad ogni prova di Saggezza (Percezione) o Saggezza (Sopravvivenza) effettuata per trovarlo. Se il bersaglio scende a 0 punti ferita prima che questo incantesimo termini l'incantatore può usare un'azione bonus in un suo turno successivo per marchiare una nuova creatura.",
+    higher_level:
+      "Se l'incantatore lancia questo incantesimo usando uno slot incantesimo di 3° livello o 4° livello, può mantenere una concentrazione sull'incantesimo fino ad un massimo di 8 ore. Quando usa uno slot di 5° livello o superiore, può mantenere una concentrazione sull'incantesimo fino ad un massimo di 24 ore.",
+    classes: ['Ranger'],
+    source: 'PHB',
+  },
+  {
     name: 'Parlare con gli Animali',
     level: 1,
     school: 'Divinazione',
