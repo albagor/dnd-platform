@@ -1070,7 +1070,8 @@ const calculatedPassivePerception = computed(
   () => 10 + (skillModifiers.value.perception || 0) + (character.value.passivePerceptionBonus || 0),
 )
 
-const carryingCapacity = computed(() => character.value.abilityScores.strength.score * 7.5)
+// Capacità di carico ufficiale: FOR × 15 libbre, poi × 0.45 = kg
+const carryingCapacity = computed(() => character.value.abilityScores.strength.score * 15 * 0.45)
 
 const totalCarriedWeight = computed(() => {
   let totalWeight = 0
@@ -1100,17 +1101,10 @@ const totalCarriedWeight = computed(() => {
 
 const encumbranceStatus = computed(() => {
   const strength = character.value.abilityScores.strength.score
-
   const weight = totalCarriedWeight.value
+  const maxCapacity = strength * 15 * 0.45
 
-  const heavilyEncumberedThreshold = strength * 5
-
-  const encumberedThreshold = strength * 2.5
-
-  if (weight > heavilyEncumberedThreshold)
-    return 'Sovraccarico (Velocità -6m, Svantaggio a prove e TS basati su FOR, DES, COS)'
-
-  if (weight > encumberedThreshold) return 'Ingombrato (Velocità -3m)'
+  if (weight > maxCapacity) return 'Sovraccarico (oltre la capacità massima: non puoi muoverti!)'
 
   return 'Leggero'
 })
@@ -1165,13 +1159,12 @@ const calculatedArmorClass = computed(() => {
 const calculatedSpeed = computed(() => {
   const raceData = dndRaces.find((r) => r.name === character.value.header.race)
 
-  let baseSpeedFt = raceData ? raceData.baseSpeed : 30
+  // baseSpeed è già in metri
+  let baseSpeedMeters = raceData ? raceData.baseSpeed : 9
 
-  if (character.value.header.subrace === 'dei Boschi') baseSpeedFt += 5
+  if (character.value.header.subrace === 'dei Boschi') baseSpeedMeters += 1.5
 
-  const baseSpeedInMeters = Math.round(baseSpeedFt * 0.3048)
-
-  let finalSpeed = baseSpeedInMeters + (character.value.combat.speedBonusMeters || 0)
+  let finalSpeed = baseSpeedMeters + (character.value.combat.speedBonusMeters || 0)
 
   const status = encumbranceStatus.value
 

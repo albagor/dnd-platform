@@ -308,4 +308,70 @@ export const dndFeats = [
     description:
       'Aumenti di 1 la Forza o la Destrezza. Ottieni competenza in quattro armi a tua scelta.',
   },
+  {
+    name: 'Aggressore Selvaggio',
+    prerequisite: 'Nessuno',
+    description:
+      'Una volta per turno, quando tiri i danni per un attacco con un’arma da mischia, puoi ritirare i dadi di danno dell’arma e scegliere quale dei due risultati usare.',
+  },
+  {
+    name: 'Adepto Marziale',
+    prerequisite: 'Nessuno',
+    description:
+      'Ottieni due manovre a scelta dal Battlemaster. Ottieni un dado superiorità (d6). Recuperi il dado dopo un riposo breve o lungo. Se già possiedi dadi superiorità, aggiungi uno e aumenti il dado di un grado se inferiore al d8.',
+  },
+  {
+    name: 'Maestro delle Armi ad Asta',
+    prerequisite: 'Nessuno',
+    description:
+      'Quando impugni un’arma ad asta, altre creature provocano attacchi di opportunità da te quando entrano nella tua portata. Puoi usare un’azione bonus per effettuare un attacco con il retro dell’arma (1d4 danni contundenti).',
+  },
+  {
+    name: 'Maestro di Balestra',
+    prerequisite: 'Nessuno',
+    description:
+      'Ignori la proprietà ricarica delle balestre. Quando effettui un attacco con un’arma a distanza come azione, puoi effettuare un attacco con una balestra a mano come azione bonus. Non subisci svantaggio agli attacchi a distanza se una creatura ostile è entro 1,5 m.',
+  },
+  {
+    name: 'Maestro di Scudo',
+    prerequisite: 'Competenza negli scudi',
+    description:
+      'Se usi l’azione Schivata, ottieni vantaggio ai tiri salvezza su Destrezza contro effetti che ti permettono un TS per dimezzare i danni. Puoi usare la reazione per interporre lo scudo e dimezzare i danni di un effetto che ti permette un TS su Destrezza.',
+  },
+  {
+    name: 'Maestro di Frusta',
+    prerequisite: 'Competenza con frusta',
+    description:
+      'Quando impugni una frusta, la sua portata aumenta di 1,5 m. Ottieni vantaggio alle prove per disarmare.',
+  },
+  {
+    name: 'Osservatore Attento',
+    prerequisite: 'Nessuno',
+    description:
+      'Ottieni +5 alla Percezione passiva e all’Investigazione passiva. Puoi leggere le labbra e notare dettagli nascosti.',
+  },
+  {
+    name: 'Ritualista',
+    prerequisite: 'Capacità di lanciare incantesimi',
+    description:
+      'Impari due incantesimi rituali di 1° livello a tua scelta da una lista di classe. Puoi lanciare questi incantesimi come rituale anche se non li hai preparati.',
+  },
+  {
+    name: 'Tavern Brawler',
+    prerequisite: 'Nessuno',
+    description:
+      'Aumenti di 1 la Forza o la Costituzione. Ottieni competenza nelle armi improvvisate. Puoi tentare di afferrare una creatura come azione bonus dopo averla colpita con un attacco senz’armi o con un’arma improvvisata.',
+  },
+  {
+    name: 'Tough',
+    prerequisite: 'Nessuno',
+    description:
+      'I tuoi punti ferita massimi aumentano di un ammontare pari al doppio del tuo livello quando prendi questo talento. Ogni volta che sali di livello, i tuoi PF massimi aumentano di 2.',
+  },
+  {
+    name: 'War Caster',
+    prerequisite: 'Capacità di lanciare incantesimi',
+    description:
+      'Hai vantaggio ai tiri salvezza per mantenere la concentrazione. Puoi lanciare incantesimi come reazione agli attacchi di opportunità. Puoi sommare componenti somatiche anche se hai uno scudo o un’arma in mano.',
+  },
 ]

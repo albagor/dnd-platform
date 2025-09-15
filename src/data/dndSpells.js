@@ -992,22 +992,6 @@ export const dndSpells = [
     classes: ['Artefice', 'Mago', 'Stregone'],
     source: 'PHB',
   },
-  {
-    name: "Protezione dall'Energia",
-    level: 3,
-    school: 'Abiurazione',
-    casting_time: '1 azione',
-    range: 'Tocco',
-    target: 'Creatura toccata',
-    components: ['V', 'S'],
-    duration: 'Concentrazione, fino a 1 ora',
-    concentration: true,
-    ritual: false,
-    description:
-      "Una creatura che tocchi ottiene resistenza a un tipo di danno elementale a scelta tra acido, freddo, fuoco, fulmine e tuono per la durata. L'incantesimo non funziona sulle creature che non possono essere toccate.",
-    classes: ['Artefice', 'Mago', 'Stregone'],
-    source: 'PHB',
-  },
 
   // --- INCANTESIMI DI 4° LIVELLO ---
   {
@@ -2313,22 +2297,7 @@ export const dndSpells = [
     classes: ['Mago', 'Stregone', 'Artefice'],
     source: 'PHB',
   },
-  {
-    name: 'Protezione dal Bene e dal Male',
-    level: 1,
-    school: 'Abiurazione',
-    casting_time: '1 azione',
-    range: 'Tocco',
-    components: ['V', 'S', 'M'],
-    material: "un po' di sale o di zolfo in polvere",
-    duration: 'Concentrazione, fino a 10 minuti',
-    concentration: true,
-    ritual: false,
-    description:
-      'Una creatura che tocchi è protetta da aberrazioni, celestiali, elementali, folletti, infernali e non morti per la durata. La creatura ha vantaggio sui tiri salvezza contro queste creature.',
-    classes: ['Mago', 'Chierico', 'Paladino', 'Warlock'],
-    source: 'PHB',
-  },
+
   {
     name: 'Ritirata Rapida',
     level: 1,
@@ -3645,21 +3614,7 @@ export const dndSpells = [
     classes: ['Mago', 'Artefice'],
     source: 'PHB',
   },
-  {
-    name: 'Pelle di Pietra',
-    level: 4,
-    school: 'Abiurazione',
-    casting_time: '1 azione',
-    range: 'Tocco',
-    components: ['V', 'S'],
-    duration: 'Concentrazione, fino a 1 ora',
-    concentration: true,
-    ritual: false,
-    description:
-      "Una creatura che tocchi ottiene resistenza a tutti i danni non magici per la durata. L'incantesimo non funziona sulle creature che sono già resistenti ai danni non magici. L'incantesimo non ha effetto sui danni magici.",
-    classes: ['Mago', 'Stregone', 'Artefice'],
-    source: 'PHB',
-  },
+
   {
     name: 'Porta Dimensionale',
     level: 4,
@@ -6322,4 +6277,36 @@ export const dndSpells = [
     classes: ['Bardo'],
     source: 'PHB',
   },
+  // --- CANTRIP (LIVELLO 0) MANCANTI ---
+  {
+    name: 'Guida',
+    level: 0,
+    school: 'Divinazione',
+    casting_time: '1 azione',
+    range: 'Tocco',
+    components: ['V', 'S'],
+    duration: 'Concentrazione, fino a 1 minuto',
+    concentration: true,
+    ritual: false,
+    description:
+      'Tocchi una creatura. Una volta, prima che l’incantesimo termini, la creatura può aggiungere 1d4 a una prova di caratteristica a sua scelta.',
+    classes: ['Chierico', 'Druido'],
+    source: 'PHB',
+  },
+
+  {
+    name: 'Ripulire',
+    level: 0,
+    school: 'Trasmutazione',
+    casting_time: '1 azione',
+    range: '1,5 metri',
+    components: ['V', 'S'],
+    duration: 'Istantanea',
+    concentration: false,
+    ritual: false,
+    description: 'Pulisci o sporchi un oggetto o una superficie di massimo 1 metro quadrato.',
+    classes: ['Bardo', 'Mago', 'Stregone'],
+    source: 'PHB',
+  },
+  // --- INCANTESIMI DI 1° LIVELLO MANCANTI (PHB) ---
 ]
