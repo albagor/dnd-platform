@@ -1208,20 +1208,32 @@ const calculatedArmorClass = computed(() => {
 
 const calculatedSpeed = computed(() => {
   const raceData = dndRaces.find((r) => r.name === character.value.header.race)
-
   // baseSpeed è già in metri
   let baseSpeedMeters = raceData ? raceData.baseSpeed : 9
-
   if (character.value.header.subrace === 'dei Boschi') baseSpeedMeters += 1.5
-
+  // Bonus Monaco: +3m dal 2° livello
+  const monkClass = character.value.header.classes.find((c) => c.name === 'Monaco')
+  if (monkClass && monkClass.level >= 2) baseSpeedMeters += 3
+  // Bonus Barbaro: +3m dal 5° livello se non indossa armatura pesante
+  const barbarianClass = character.value.header.classes.find((c) => c.name === 'Barbaro')
+  const equippedArmor = character.value.equipment.defensiveItems?.find(
+    (i) => i.isEquipped && i.type === 'Pesante',
+  )
+  if (barbarianClass && barbarianClass.level >= 5 && !equippedArmor) baseSpeedMeters += 3
+  // Bonus da talenti: cerca talenti che aumentano la velocità
+  if (character.value.chosenFeats) {
+    character.value.chosenFeats.forEach((feat) => {
+      if (feat.name && feat.name.toLowerCase().includes('velocità')) baseSpeedMeters += 3
+      if (feat.description && feat.description.toLowerCase().includes('velocità aumenta di 1,5 m'))
+        baseSpeedMeters += 1.5
+      if (feat.description && feat.description.toLowerCase().includes('velocità aumenta di 3 m'))
+        baseSpeedMeters += 3
+    })
+  }
   let finalSpeed = baseSpeedMeters + (character.value.combat.speedBonusMeters || 0)
-
   const status = encumbranceStatus.value
-
   if (status.includes('-3m')) finalSpeed -= 3
-
   if (status.includes('-6m')) finalSpeed -= 6
-
   return `${Math.max(0, finalSpeed)} m`
 })
 
@@ -4447,332 +4459,6 @@ textarea {
 
   justify-content: center;
 
-  align-items: center;
-}
-
-.death-saves-box {
-  background-color: #f8f8f8;
-
-  border: 1px solid #ddd;
-
-  border-radius: 6px;
-
-  padding: 10px;
-
-  grid-column: 1 / -1; /* Occupa tutta la larghezza */
-}
-
-.saves-tracker {
-  display: flex;
-
-  justify-content: space-around;
-
-  margin-top: 5px;
-}
-
-.successes,
-.failures {
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-
-  gap: 5px;
-}
-
-.successes span {
-  color: #27ae60;
-
-  font-weight: bold;
-}
-
-.failures span {
-  color: #c0392b;
-
-  font-weight: bold;
-}
-
-.checkbox-group {
-  display: flex;
-
-  gap: 10px;
-}
-
-.checkbox-group input[type='checkbox'] {
-  width: 20px;
-
-  height: 20px;
-}
-
-.concentration-badge {
-  background: #f7d358;
-
-  color: #b30000;
-
-  font-weight: bold;
-
-  border-radius: 4px;
-
-  padding: 2px 6px;
-
-  margin-left: 10px;
-
-  font-size: 0.9em;
-
-  border: 1px solid #b30000;
-}
-
-.concentration-btn {
-  background: #ffe066;
-
-  color: #b30000;
-
-  border-radius: 6px;
-
-  padding: 2px 8px;
-
-  font-size: 0.9em;
-
-  font-weight: bold;
-
-  margin-left: 8px;
-
-  vertical-align: middle;
-
-  border: 1px solid #b30000;
-
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-
-.concentration-btn {
-  background: none;
-
-  border: 1px solid #b30000;
-
-  color: #b30000;
-
-  border-radius: 50%;
-
-  width: 28px;
-
-  height: 28px;
-
-  margin-left: 8px;
-
-  font-size: 1.1em;
-
-  cursor: pointer;
-
-  transition:
-    background 0.2s,
-    color 0.2s;
-}
-
-.concentration-btn.active {
-  background: #b30000;
-
-  color: #fff;
-}
-
-.concentration-indicator {
-  margin-top: 6px;
-
-  background: #ffe066;
-
-  color: #b30000;
-
-  border-radius: 6px;
-
-  padding: 4px 10px;
-
-  font-size: 1em;
-
-  font-weight: bold;
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 8px;
-}
-
-.concentration-active {
-  border: 2px solid #b30000 !important;
-
-  box-shadow: 0 0 8px #ffe066;
-
-  color: #fff;
-}
-
-.concentration-indicator {
-  background: #f7d358;
-
-  color: #b30000;
-
-  border: 1px solid #b30000;
-
-  border-radius: 6px;
-
-  padding: 6px 12px;
-
-  margin: 10px 0;
-
-  font-size: 1.1em;
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 8px;
-}
-
-.bersaglio {
-  color: #0055a5;
-
-  font-weight: bold;
-}
-
-.materiale {
-  color: #b30000;
-
-  font-weight: bold;
-}
-
-.concentration-indicator-main {
-  background-color: #f7d358;
-
-  color: #8c5a00;
-
-  border: 2px solid #b38f00;
-
-  border-radius: 8px;
-
-  padding: 10px 15px;
-
-  margin: 1rem 0;
-
-  font-size: 1.1em;
-
-  font-weight: bold;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: space-between;
-
-  gap: 15px;
-
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-/* Sostituisci la regola .reset-btn con queste */
-
-.section-header {
-  /* Assicurati che il tuo .section-header possa contenere i pulsanti */
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 1rem;
-}
-
-.section-header h3 {
-  flex-grow: 1; /* Fa in modo che il titolo spinga i pulsanti a destra */
-}
-
-.rest-buttons {
-  display: flex;
-
-  gap: 0.5rem;
-}
-
-.reset-btn {
-  background-color: #3498db;
-
-  color: white;
-
-  border: none;
-
-  border-radius: 5px;
-
-  padding: 5px 10px;
-
-  font-size: 0.8em;
-
-  cursor: pointer;
-
-  white-space: nowrap; /* Evita che il testo vada a capo */
-}
-
-.reset-btn.short-rest {
-  background-color: #1abc9c; /* Un colore diverso per distinguerlo */
-}
-
-.special-spells-group {
-  margin-bottom: 1rem;
-
-  padding: 0.75rem;
-
-  background-color: #f8f9fa;
-
-  border-radius: 6px;
-}
-
-.special-spells-group h4 {
-  margin-top: 0;
-
-  margin-bottom: 0.5rem;
-
-  font-family: serif;
-
-  border-bottom: 1px solid #e0e0e0;
-
-  padding-bottom: 0.5rem;
-}
-
-.special-spells-list {
-  list-style: none;
-
-  padding: 0;
-
-  margin: 0;
-
-  display: flex;
-
-  flex-wrap: wrap;
-
-  gap: 0.5rem 1rem;
-}
-
-.special-spells-list li {
-  font-size: 0.9em;
-}
-
-.placeholder {
-  font-style: italic;
-
-  color: #888;
-}
-/* Stile per il pulsante della chat */
-.chat-fab {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  width: 60px;
-  height: 60px;
-  background-color: #8e44ad;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  font-size: 2em;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-  display: flex;
-  justify-content: center;
   align-items: center;
 }
 
