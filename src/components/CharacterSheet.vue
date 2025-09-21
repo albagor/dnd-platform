@@ -31,7 +31,7 @@ import Grimoire from './Grimoire.vue'
 
 import { auth, db } from '@/firebaseConfig'
 
-import { doc, setDoc, onSnapshot } from 'firebase/firestore'
+import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore'
 
 import { useToast } from 'vue-toastification'
 
@@ -543,9 +543,12 @@ function setupCharacterListener(userId) {
   characterListener = onSnapshot(docRef, (docSnap) => {
     if (docSnap.exists()) {
       character.value = { ...docSnap.data(), id: userId } // <--- sempre id giusto!
+
+      initializeHitDiceResources()
     } else {
       character.value = { ...JSON.parse(JSON.stringify(defaultCharacter)), id: userId }
     }
+    initializeHitDiceResources()
   })
 }
 
@@ -632,10 +635,12 @@ async function loadCharacterSheet(userId) {
     const loadedData = docSnap.data()
 
     character.value = { ...defaultCharacter, ...loadedData }
+    initializeHitDiceResources()
 
     toast.success('Scheda personaggio caricata!')
   } else {
     character.value = JSON.parse(JSON.stringify(defaultCharacter))
+    initializeHitDiceResources()
 
     toast.info('Nessuna scheda trovata per questo giocatore. Mostrata scheda vuota.')
   }
@@ -714,36 +719,34 @@ const maxSuperiorityDice = computed(() => {
 })
 
 function resetResources() {
-  if (!character.value.classResources) {
-    character.value.classResources = JSON.parse(JSON.stringify(defaultCharacter.classResources))
-  }
+  if (!character.value || !character.value.classResources) return
 
   const resources = character.value.classResources
 
-  if (maxRageUses.value > 0) resources.rageUses.current = maxRageUses.value
+  // Ripristino DV: recupera metà dei DV totali (arrotondato per difetto)
+  if (resources.hitDice) {
+    Object.values(resources.hitDice).forEach((dv) => {
+      if (dv.used > 0) {
+        const toRecover = Math.floor(dv.total / 2)
+        dv.used = Math.max(0, dv.used - toRecover)
+      }
+    })
+  }
 
-  if (maxBardicInspiration.value > 0)
-    resources.bardicInspiration.current = maxBardicInspiration.value
+  // Reset risorse di classe
+  if (resources.rageUses) resources.rageUses.current = maxRageUses.value
+  if (resources.bardicInspiration) resources.bardicInspiration.current = maxBardicInspiration.value
+  if (resources.kiPoints) resources.kiPoints.current = maxKiPoints.value
+  if (resources.sorceryPoints) resources.sorceryPoints.current = maxSorceryPoints.value
+  if (resources.layOnHandsPool) resources.layOnHandsPool.current = layOnHandsPool.value
+  if (resources.channelDivinity) resources.channelDivinity.used = 0
+  if (resources.secondWind) resources.secondWind.used = false
+  if (resources.actionSurge) resources.actionSurge.used = false
+  if (resources.arcaneRecovery) resources.arcaneRecovery.used = false
+  if (resources.wildShapeUses) resources.wildShapeUses.used = 0
+  if (resources.superiorityDice) resources.superiorityDice.current = maxSuperiorityDice.value
 
-  if (maxKiPoints.value > 0) resources.kiPoints.current = maxKiPoints.value
-
-  if (maxSorceryPoints.value > 0) resources.sorceryPoints.current = maxSorceryPoints.value
-
-  if (layOnHandsPool.value > 0) resources.layOnHandsPool.current = layOnHandsPool.value
-
-  if (maxChannelDivinity.value > 0) resources.channelDivinity.used = 0
-
-  resources.secondWind.used = false
-
-  resources.actionSurge.used = false
-
-  resources.arcaneRecovery.used = false
-
-  if (getClassLevel('Druido') > 1) resources.wildShapeUses.used = 0
-
-  if (maxSuperiorityDice.value > 0) resources.superiorityDice.current = maxSuperiorityDice.value
-
-  toast.success('Risorse ripristinate!')
+  toast.success('Risorse e DV ripristinati!')
 }
 
 // FUNZIONI E COMPUTED PROPERTIES ESISTENTI
@@ -1197,6 +1200,30 @@ const hitDicePool = computed(() => {
     .join(', ')
 })
 
+function initializeHitDiceResources() {
+  if (!character.value.classResources.hitDice) {
+    character.value.classResources.hitDice = {}
+    const pool = {}
+    character.value.header.classes.forEach((c) => {
+      if (c.name && c.level > 0) {
+        const die = dndHitDice[c.name]
+        if (die) {
+          const dieKey = `d${die}`
+          pool[dieKey] = (pool[dieKey] || 0) + c.level
+        }
+      }
+    })
+    Object.entries(pool).forEach(([dieType, total]) => {
+      character.value.classResources.hitDice[dieType] = {
+        total,
+        used: 0,
+        selectedForShortRest: 0,
+      }
+    })
+  }
+}
+initializeHitDiceResources()
+
 const racialTraits = computed(() => {
   const raceName = character.value.header.race
 
@@ -1438,33 +1465,54 @@ function doShortRest() {
 
   const resources = character.value.classResources
 
-  // Recuperare Energie (Guerriero)
+  // LOGICA CONSUMO DV
+  if (resources.hitDice) {
+    Object.entries(resources.hitDice).forEach(([dieType, dv]) => {
+      const toSpend = Math.min(dv.selectedForShortRest, dv.total - dv.used)
+      if (toSpend > 0) {
+        dv.used += toSpend
+        // Calcolo recupero PV: DV + modificatore Costituzione
+        const conMod = character.value.abilityScores.constitution
+          ? Math.floor((character.value.abilityScores.constitution.score - 10) / 2)
+          : 0
+        let totalHeal = 0
+        for (let i = 0; i < toSpend; i++) {
+          // Tira il dado vita
+          const dieNum = Number(dieType.replace('d', ''))
+          const roll = Math.floor(Math.random() * dieNum) + 1
+          totalHeal += roll + conMod
+        }
+        // Aggiorna i PV
+        character.value.combat.hp.current = Math.min(
+          character.value.combat.hp.current + totalHeal,
+          character.value.combat.hp.max,
+        )
+      }
+      dv.selectedForShortRest = 0
+    })
+  }
 
+  // Recuperare Energie (Guerriero)
   if (resources.secondWind) {
     resources.secondWind.used = false
   }
 
   // Azione Impetuosa (Guerriero)
-
   if (resources.actionSurge) {
     resources.actionSurge.used = false
   }
 
   // Incanalare Divinità (Chierico/Paladino) - Resetta gli usi
-
   if (resources.channelDivinity) {
     resources.channelDivinity.used = 0
   }
 
   // Forma Selvatica (Druido) - Resetta gli usi
-
-  // N.B. Solo il Circolo della Luna la recupera, ma per semplicità la resettiamo per tutti
-
   if (resources.wildShapeUses) {
     resources.wildShapeUses.used = 0
   }
 
-  toast.success('Privilegi da riposo breve ripristinati!')
+  toast.success('Riposo breve effettuato! DV spesi e PV recuperati.')
 }
 </script>
 
@@ -2085,6 +2133,36 @@ function doShortRest() {
             id="arcaneRecovery"
             v-model="character.classResources.arcaneRecovery.used"
           /><span>Usato</span>
+        </div>
+        <div class="resource-item full-width">
+          <label>Dadi Vita (DV) Usati nel Riposo Breve</label>
+          <div class="hit-dice-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo DV</th>
+                  <th>Totali</th>
+                  <th>Usati</th>
+                  <th>Seleziona per Riposo Breve</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(dv, dieType) in character.classResources.hitDice" :key="dieType">
+                  <td>{{ dieType }}</td>
+                  <td>{{ dv.total }}</td>
+                  <td>{{ dv.used }}</td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      :max="dv.total - dv.used"
+                      v-model.number="dv.selectedForShortRest"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
