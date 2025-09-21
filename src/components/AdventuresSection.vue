@@ -7,7 +7,12 @@ import { useUiStore } from '@/stores/uiStore'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'vue-toastification'
 import { db } from '@/firebaseConfig'
-import { doc, getDoc, setDoc, collection, onSnapshot, deleteDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, collection, onSnapshot,   deleteDoc,
+  query,                             // <-- Aggiungi
+  where,                             // <-- Aggiungi
+  updateDoc,                         // <-- Aggiungi
+  onSnapshot as onSnapshotQuery,     // <-- Aggiungi alias
+} from 'firebase/firestore'
 import { uploadImage } from '@/services/storageService.js'
 import Bestiary from './Bestiary.vue'
 import MonsterDetails from './MonsterDetails.vue'
@@ -17,6 +22,8 @@ import ItemDetails from './ItemDetails.vue'
 import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage' // <-- AGGIUNGI QUESTO IMPORTO
 import PrivateChat from './PrivateChat.vue';
 
+const unreadMessages = ref({}); // <-- NUOVO: Oggetto per tracciare le notifiche per giocatore
+let playerListeners = [];      // <-- NUOVO: Array per gestire i listener
 
 const firebaseStorage = getStorage() // <-- AGGIUNGI QUESTA INIZIALIZZAZIONE
 const abilityOrder = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
@@ -129,6 +136,8 @@ async function loadAdventure(adventureId) {
           return characterSnap.exists() ? { id: playerDoc.id, ...characterSnap.data() } : null
         })
         playersInAdventure.value = (await Promise.all(playerPromises)).filter((p) => p)
+          setupAllPlayerMessageListeners();
+
       })
 
     } else {
@@ -170,6 +179,44 @@ watch(
       }, 2000)
     }
   }, { deep: true });
+
+
+  onUnmounted(() => {
+  // ... codice esistente per pulire gli altri listener ...
+  playerListeners.forEach(unsubscribe => unsubscribe()); // <-- AGGIUNGI QUESTA RIGA
+});
+  // Funzione per impostare i listener per i messaggi non letti da ogni giocatore
+function setupAllPlayerMessageListeners() {
+  // Pulisce i vecchi listener prima di crearne di nuovi
+  playerListeners.forEach(unsubscribe => unsubscribe());
+  playerListeners = [];
+
+  const dmId = userStore.user.uid;
+  if (!currentAdventure.value || !dmId) return;
+
+  // Itera su ogni giocatore nell'avventura
+  playersInAdventure.value.forEach(player => {
+    const playerId = player.id;
+    const ids = [playerId, dmId].sort();
+    const chatId = ids.join('_');
+    const messagesRef = collection(db, 'adventures', currentAdventure.value.id, 'privateChats', chatId, 'messages');
+
+    // Query per i messaggi inviati DAL GIOCATORE AL DM e non letti
+    const q = query(
+      messagesRef,
+      where('senderId', '==', playerId),
+      where('recipientId', '==', dmId),
+      where('read', '==', false)
+    );
+
+    const unsubscribe = onSnapshotQuery(q, (snapshot) => {
+      // Aggiorna lo stato reattivo: true se ci sono messaggi non letti, altrimenti false
+      unreadMessages.value[playerId] = !snapshot.empty;
+    });
+
+    playerListeners.push(unsubscribe);
+  });
+}
 
 // --- FUNZIONI PER LINK DINAMICI ---
 const allPreparedItems = computed(() => {
@@ -565,9 +612,10 @@ function setImageFromUrl(item, fieldName, event) {
                   >PF: {{ player.combat.hp.current }} / {{ player.combat.hp.max }}</span
                 >
               </div>
-                <button @click.stop="openChatWithPlayer(player)" class="chat-player-btn" title="Chatta con il giocatore">
-    💬
-  </button>
+<button @click.stop="openChatWithPlayer(player)" class="chat-player-btn" title="Chatta con il giocatore">
+  💬
+  <span v-if="unreadMessages[player.id]" class="notification-badge"></span>
+</button>
               <button @click.stop="removePlayer(player.id)" class="remove-player-btn">×</button>
             </li>
           </ul>
@@ -1867,4 +1915,20 @@ function setImageFromUrl(item, fieldName, event) {
   margin-bottom: 4px;
 }
 
+/* Posiziona il pulsante della chat relativamente per contenere il badge */
+.chat-player-btn {
+  position: relative;
+}
+
+/* Stile per il pallino di notifica */
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  background-color: #ff3b30;
+  border-radius: 50%;
+  border: 2px solid #e9ecef; /* Usa il colore di sfondo della card per lo stacco */
+}
 </style>

@@ -31,8 +31,16 @@ import Grimoire from './Grimoire.vue'
 
 import { auth, db } from '@/firebaseConfig'
 
-import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore'
-
+import {
+  doc,
+  setDoc,
+  onSnapshot,
+  getDoc,
+  collection,
+  query,
+  where,
+  onSnapshot as onSnapshotQuery,
+} from 'firebase/firestore'
 import { useToast } from 'vue-toastification'
 
 import { uploadImage } from '@/services/storageService.js'
@@ -45,7 +53,36 @@ import PrivateChat from './PrivateChat.vue'
 
 import { dndFeats } from '../data/dndFeats.js'
 
+// Funzione per ascoltare i messaggi non letti
+// In CharacterSheet.vue
+
+function setupUnreadMessagesListener(userId, dmId, adventureId) {
+  if (unreadListener) {
+    unreadListener()
+  }
+
+  const ids = [userId, dmId].sort()
+  const chatId = ids.join('_')
+  const messagesRef = collection(db, `adventures/${adventureId}/privateChats/${chatId}/messages`)
+
+  const q = query(
+    messagesRef,
+    where('senderId', '==', dmId),
+    where('recipientId', '==', userId),
+    where('read', '==', false),
+  )
+
+  unreadListener = onSnapshotQuery(q, (snapshot) => {
+    hasNewMessages.value = !snapshot.empty
+  })
+}
 const isChatOpen = ref(false)
+const hasNewMessages = ref(false) // <-- NUOVA: Per controllare la notifica
+let unreadListener = null // <-- NUOVA: Per gestire il listener dei messaggi
+function openChat() {
+  isChatOpen.value = true
+  hasNewMessages.value = false // <-- Nasconde la notifica quando la chat viene aperta
+}
 
 const adventureInfo = ref(null) // NUOVO: Non più dati di prova, parte da null
 
@@ -563,17 +600,27 @@ onMounted(() => {
 
   sessionListener = onSnapshot(sessionDocRef, (docSnap) => {
     if (docSnap.exists()) {
-      // Se esiste una sessione, salviamo le informazioni
-
       adventureInfo.value = {
         adventureId: docSnap.data().adventureId,
-
         dmId: docSnap.data().dmId,
       }
-    } else {
-      // Se non esiste, la chat non sarà disponibile
 
+      // <-- INIZIO MODIFICA -->
+      // Se abbiamo le info della sessione e l'ID del personaggio, avviamo il listener
+      if (targetUserId && adventureInfo.value.dmId && adventureInfo.value.adventureId) {
+        setupUnreadMessagesListener(
+          targetUserId,
+          adventureInfo.value.dmId,
+          adventureInfo.value.adventureId,
+        )
+      }
+      // <-- FINE MODIFICA -->
+    } else {
       adventureInfo.value = null
+      // Se la sessione finisce, fermiamo il listener dei messaggi
+      if (unreadListener) {
+        unreadListener()
+      }
     }
   })
 })
@@ -590,8 +637,8 @@ onBeforeRouteUpdate((to, from) => {
 
 onUnmounted(() => {
   if (characterListener) characterListener() // Interrompe l'ascolto quando si lascia la pagina
-
   if (sessionListener) sessionListener() // NUOVO: Interrompiamo l'ascolto della sessione
+  if (unreadListener) unreadListener() // <-- AGGIUNGI QUESTA RIGA
 })
 
 // --- SOLO UN WATCHER DI SALVATAGGIO, SEMPRE SU character.value.id (che è il player in ascolto) ---
@@ -2825,8 +2872,9 @@ function doShortRest() {
       </div>
     </div>
 
-    <button v-if="adventureInfo" @click="isChatOpen = true" class="chat-fab" title="Chat con il DM">
+    <button v-if="adventureInfo" @click="openChat" class="chat-fab" title="Chat con il DM">
       💬
+      <span v-if="hasNewMessages" class="notification-badge"></span>
     </button>
 
     <PrivateChat
@@ -4707,5 +4755,37 @@ textarea {
   font-style: italic;
 
   color: #888;
+}
+/* Stile per il pulsante della chat */
+.chat-fab {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  background-color: #8e44ad;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 2em;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Stile per il pallino di notifica */
+.notification-badge {
+  position: absolute;
+  top: 5px; /* Posizionalo in alto */
+  right: 5px; /* Posizionalo a destra */
+  width: 15px;
+  height: 15px;
+  background-color: #ff3b30; /* Rosso acceso */
+  border-radius: 50%;
+  border: 2px solid white; /* Bordo per staccarlo dallo sfondo */
+  box-shadow: 0 0 5px rgba(255, 0, 0, 0.7); /* Effetto alone */
 }
 </style>

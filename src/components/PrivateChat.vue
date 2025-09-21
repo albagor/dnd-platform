@@ -1,7 +1,16 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { db } from '@/firebaseConfig'
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  doc, // <-- Aggiungi questo
+  updateDoc,
+} from 'firebase/firestore' // <-- Aggiungi questo
 import { useUserStore } from '@/stores/userStore' // Importiamo lo store dell'utente
 
 // Definiamo le props che il componente riceve
@@ -22,18 +31,16 @@ let unsubscribe = null // Variabile per memorizzare la funzione di "stop ascolto
 const chatBodyRef = ref(null) // Riferimento al contenitore dei messaggi per lo scroll
 
 // QUESTA È LA LOGICA DI RICEZIONE IN TEMPO REALE
+// In PrivateChat.vue
+
 onMounted(() => {
-  // Controlliamo di avere tutti gli ID necessari
   if (!props.adventureId || !props.dmId || !props.recipientId) {
     console.error('Chat: ID mancanti!')
     return
   }
 
-  // Costruiamo l'ID univoco della chat. Usiamo una convenzione per averlo sempre uguale
-  // (es. IDminore_IDmaggiore) per evitare chat duplicate.
   const userIds = [userStore.user.uid, props.recipientId].sort()
   const chatId = userIds.join('_')
-
   const messagesCol = collection(
     db,
     'adventures',
@@ -44,10 +51,35 @@ onMounted(() => {
   )
   const q = query(messagesCol, orderBy('timestamp'))
 
-  // onSnapshot è la magia di Firebase: si mette in ascolto e si aggiorna da solo
-  // ogni volta che un nuovo messaggio viene aggiunto nel database.
   unsubscribe = onSnapshot(q, (snapshot) => {
-    messages.value = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+    const loadedMessages = []
+
+    // --- INIZIO BLOCCO MODIFICATO ---
+    snapshot.docs.forEach((document) => {
+      const messageData = document.data()
+      loadedMessages.push({ id: document.id, ...messageData })
+
+      // Controlla se il messaggio è stato ricevuto (non inviato da noi)
+      // e se non è ancora stato segnato come letto.
+      if (messageData.recipientId === userStore.user.uid && messageData.read === false) {
+        // Se entrambe le condizioni sono vere, aggiorna il documento
+        const messageRef = doc(
+          db,
+          'adventures',
+          props.adventureId,
+          'privateChats',
+          chatId,
+          'messages',
+          document.id,
+        )
+        updateDoc(messageRef, {
+          read: true,
+        })
+      }
+    })
+    // --- FINE BLOCCO MODIFICATO ---
+
+    messages.value = loadedMessages
 
     // Scrolla automaticamente fino all'ultimo messaggio
     nextTick(() => {
@@ -64,6 +96,8 @@ onUnmounted(() => {
 })
 
 // QUESTA È LA LOGICA DI INVIO MESSAGGIO
+// Dentro PrivateChat.vue
+
 async function sendMessage() {
   if (!newMessage.value.trim()) return
 
@@ -78,15 +112,16 @@ async function sendMessage() {
     'messages',
   )
 
-  // Aggiungiamo un nuovo documento (messaggio) alla collezione
+  // Modifica solo questo blocco
   await addDoc(messagesCol, {
     text: newMessage.value,
     senderId: userStore.user.uid,
     recipientId: props.recipientId,
-    timestamp: serverTimestamp(), // Orario del server di Firebase
+    timestamp: serverTimestamp(),
+    read: false, // <-- ECCO LA RIGA MANCANTE!
   })
 
-  newMessage.value = '' // Pulisce l'input
+  newMessage.value = ''
 }
 </script>
 
