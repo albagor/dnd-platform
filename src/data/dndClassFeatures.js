@@ -273,7 +273,7 @@ export const dndClassFeatures = {
       {
         name: 'Deviare Proiettili',
         description:
-          'Usi la reazione per ridurre il danno di un attacco a distanza. Se lo riduci a 0, puoi spendere 1 Ki per contrattaccare.',
+          "Usi la reazione per ridurre il danno di un attacco a distanza. Calcolo della riduzione del danno: Il monaco non annulla l'attacco ma riduce il danno che subisce. La formula per la riduzione del danno è: 1d10 + Modificatore di Destrezza del Monaco + Livello del Monaco. Se lo riduci a 0, puoi spendere 1 Ki per contrattaccare.",
       },
     ],
     4: [
