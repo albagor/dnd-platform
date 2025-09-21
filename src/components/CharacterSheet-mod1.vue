@@ -31,8 +31,16 @@ import Grimoire from './Grimoire.vue'
 
 import { auth, db } from '@/firebaseConfig'
 
-import { doc, setDoc, onSnapshot } from 'firebase/firestore'
-
+import {
+  doc,
+  setDoc,
+  onSnapshot,
+  getDoc,
+  collection,
+  query,
+  where,
+  onSnapshot as onSnapshotQuery,
+} from 'firebase/firestore'
 import { useToast } from 'vue-toastification'
 
 import { uploadImage } from '@/services/storageService.js'
@@ -45,7 +53,36 @@ import PrivateChat from './PrivateChat.vue'
 
 import { dndFeats } from '../data/dndFeats.js'
 
+// Funzione per ascoltare i messaggi non letti
+// In CharacterSheet.vue
+
+function setupUnreadMessagesListener(userId, dmId, adventureId) {
+  if (unreadListener) {
+    unreadListener()
+  }
+
+  const ids = [userId, dmId].sort()
+  const chatId = ids.join('_')
+  const messagesRef = collection(db, `adventures/${adventureId}/privateChats/${chatId}/messages`)
+
+  const q = query(
+    messagesRef,
+    where('senderId', '==', dmId),
+    where('recipientId', '==', userId),
+    where('read', '==', false),
+  )
+
+  unreadListener = onSnapshotQuery(q, (snapshot) => {
+    hasNewMessages.value = !snapshot.empty
+  })
+}
 const isChatOpen = ref(false)
+const hasNewMessages = ref(false) // <-- NUOVA: Per controllare la notifica
+let unreadListener = null // <-- NUOVA: Per gestire il listener dei messaggi
+function openChat() {
+  isChatOpen.value = true
+  hasNewMessages.value = false // <-- Nasconde la notifica quando la chat viene aperta
+}
 
 const adventureInfo = ref(null) // NUOVO: Non più dati di prova, parte da null
 
@@ -206,7 +243,7 @@ const skillAbilityMap = {
 
   performance: 'charisma',
 
-  persuasion: 'persuasion',
+  persuasion: 'charisma',
 
   religion: 'intelligence',
 
@@ -543,9 +580,12 @@ function setupCharacterListener(userId) {
   characterListener = onSnapshot(docRef, (docSnap) => {
     if (docSnap.exists()) {
       character.value = { ...docSnap.data(), id: userId } // <--- sempre id giusto!
+
+      initializeHitDiceResources()
     } else {
       character.value = { ...JSON.parse(JSON.stringify(defaultCharacter)), id: userId }
     }
+    initializeHitDiceResources()
   })
 }
 
@@ -560,17 +600,27 @@ onMounted(() => {
 
   sessionListener = onSnapshot(sessionDocRef, (docSnap) => {
     if (docSnap.exists()) {
-      // Se esiste una sessione, salviamo le informazioni
-
       adventureInfo.value = {
         adventureId: docSnap.data().adventureId,
-
         dmId: docSnap.data().dmId,
       }
-    } else {
-      // Se non esiste, la chat non sarà disponibile
 
+      // <-- INIZIO MODIFICA -->
+      // Se abbiamo le info della sessione e l'ID del personaggio, avviamo il listener
+      if (targetUserId && adventureInfo.value.dmId && adventureInfo.value.adventureId) {
+        setupUnreadMessagesListener(
+          targetUserId,
+          adventureInfo.value.dmId,
+          adventureInfo.value.adventureId,
+        )
+      }
+      // <-- FINE MODIFICA -->
+    } else {
       adventureInfo.value = null
+      // Se la sessione finisce, fermiamo il listener dei messaggi
+      if (unreadListener) {
+        unreadListener()
+      }
     }
   })
 })
@@ -587,8 +637,8 @@ onBeforeRouteUpdate((to, from) => {
 
 onUnmounted(() => {
   if (characterListener) characterListener() // Interrompe l'ascolto quando si lascia la pagina
-
   if (sessionListener) sessionListener() // NUOVO: Interrompiamo l'ascolto della sessione
+  if (unreadListener) unreadListener() // <-- AGGIUNGI QUESTA RIGA
 })
 
 // --- SOLO UN WATCHER DI SALVATAGGIO, SEMPRE SU character.value.id (che è il player in ascolto) ---
@@ -632,10 +682,12 @@ async function loadCharacterSheet(userId) {
     const loadedData = docSnap.data()
 
     character.value = { ...defaultCharacter, ...loadedData }
+    initializeHitDiceResources()
 
     toast.success('Scheda personaggio caricata!')
   } else {
     character.value = JSON.parse(JSON.stringify(defaultCharacter))
+    initializeHitDiceResources()
 
     toast.info('Nessuna scheda trovata per questo giocatore. Mostrata scheda vuota.')
   }
@@ -714,36 +766,34 @@ const maxSuperiorityDice = computed(() => {
 })
 
 function resetResources() {
-  if (!character.value.classResources) {
-    character.value.classResources = JSON.parse(JSON.stringify(defaultCharacter.classResources))
-  }
+  if (!character.value || !character.value.classResources) return
 
   const resources = character.value.classResources
 
-  if (maxRageUses.value > 0) resources.rageUses.current = maxRageUses.value
+  // Ripristino DV: recupera metà dei DV totali (arrotondato per difetto)
+  if (resources.hitDice) {
+    Object.values(resources.hitDice).forEach((dv) => {
+      if (dv.used > 0) {
+        const toRecover = Math.floor(dv.total / 2)
+        dv.used = Math.max(0, dv.used - toRecover)
+      }
+    })
+  }
 
-  if (maxBardicInspiration.value > 0)
-    resources.bardicInspiration.current = maxBardicInspiration.value
+  // Reset risorse di classe
+  if (resources.rageUses) resources.rageUses.current = maxRageUses.value
+  if (resources.bardicInspiration) resources.bardicInspiration.current = maxBardicInspiration.value
+  if (resources.kiPoints) resources.kiPoints.current = maxKiPoints.value
+  if (resources.sorceryPoints) resources.sorceryPoints.current = maxSorceryPoints.value
+  if (resources.layOnHandsPool) resources.layOnHandsPool.current = layOnHandsPool.value
+  if (resources.channelDivinity) resources.channelDivinity.used = 0
+  if (resources.secondWind) resources.secondWind.used = false
+  if (resources.actionSurge) resources.actionSurge.used = false
+  if (resources.arcaneRecovery) resources.arcaneRecovery.used = false
+  if (resources.wildShapeUses) resources.wildShapeUses.used = 0
+  if (resources.superiorityDice) resources.superiorityDice.current = maxSuperiorityDice.value
 
-  if (maxKiPoints.value > 0) resources.kiPoints.current = maxKiPoints.value
-
-  if (maxSorceryPoints.value > 0) resources.sorceryPoints.current = maxSorceryPoints.value
-
-  if (layOnHandsPool.value > 0) resources.layOnHandsPool.current = layOnHandsPool.value
-
-  if (maxChannelDivinity.value > 0) resources.channelDivinity.used = 0
-
-  resources.secondWind.used = false
-
-  resources.actionSurge.used = false
-
-  resources.arcaneRecovery.used = false
-
-  if (getClassLevel('Druido') > 1) resources.wildShapeUses.used = 0
-
-  if (maxSuperiorityDice.value > 0) resources.superiorityDice.current = maxSuperiorityDice.value
-
-  toast.success('Risorse ripristinate!')
+  toast.success('Risorse e DV ripristinati!')
 }
 
 // FUNZIONI E COMPUTED PROPERTIES ESISTENTI
@@ -1070,7 +1120,8 @@ const calculatedPassivePerception = computed(
   () => 10 + (skillModifiers.value.perception || 0) + (character.value.passivePerceptionBonus || 0),
 )
 
-const carryingCapacity = computed(() => character.value.abilityScores.strength.score * 7.5)
+// Capacità di carico ufficiale: FOR × 15 libbre, poi × 0.45 = kg
+const carryingCapacity = computed(() => character.value.abilityScores.strength.score * 15 * 0.45)
 
 const totalCarriedWeight = computed(() => {
   let totalWeight = 0
@@ -1100,17 +1151,10 @@ const totalCarriedWeight = computed(() => {
 
 const encumbranceStatus = computed(() => {
   const strength = character.value.abilityScores.strength.score
-
   const weight = totalCarriedWeight.value
+  const maxCapacity = strength * 15 * 0.45
 
-  const heavilyEncumberedThreshold = strength * 5
-
-  const encumberedThreshold = strength * 2.5
-
-  if (weight > heavilyEncumberedThreshold)
-    return 'Sovraccarico (Velocità -6m, Svantaggio a prove e TS basati su FOR, DES, COS)'
-
-  if (weight > encumberedThreshold) return 'Ingombrato (Velocità -3m)'
+  if (weight > maxCapacity) return 'Sovraccarico (oltre la capacità massima: non puoi muoverti!)'
 
   return 'Leggero'
 })
@@ -1164,21 +1208,32 @@ const calculatedArmorClass = computed(() => {
 
 const calculatedSpeed = computed(() => {
   const raceData = dndRaces.find((r) => r.name === character.value.header.race)
-
-  let baseSpeedFt = raceData ? raceData.baseSpeed : 30
-
-  if (character.value.header.subrace === 'dei Boschi') baseSpeedFt += 5
-
-  const baseSpeedInMeters = Math.round(baseSpeedFt * 0.3048)
-
-  let finalSpeed = baseSpeedInMeters + (character.value.combat.speedBonusMeters || 0)
-
+  // baseSpeed è già in metri
+  let baseSpeedMeters = raceData ? raceData.baseSpeed : 9
+  if (character.value.header.subrace === 'dei Boschi') baseSpeedMeters += 1.5
+  // Bonus Monaco: +3m dal 2° livello
+  const monkClass = character.value.header.classes.find((c) => c.name === 'Monaco')
+  if (monkClass && monkClass.level >= 2) baseSpeedMeters += 3
+  // Bonus Barbaro: +3m dal 5° livello se non indossa armatura pesante
+  const barbarianClass = character.value.header.classes.find((c) => c.name === 'Barbaro')
+  const equippedArmor = character.value.equipment.defensiveItems?.find(
+    (i) => i.isEquipped && i.type === 'Pesante',
+  )
+  if (barbarianClass && barbarianClass.level >= 5 && !equippedArmor) baseSpeedMeters += 3
+  // Bonus da talenti: cerca talenti che aumentano la velocità
+  if (character.value.chosenFeats) {
+    character.value.chosenFeats.forEach((feat) => {
+      if (feat.name && feat.name.toLowerCase().includes('velocità')) baseSpeedMeters += 3
+      if (feat.description && feat.description.toLowerCase().includes('velocità aumenta di 1,5 m'))
+        baseSpeedMeters += 1.5
+      if (feat.description && feat.description.toLowerCase().includes('velocità aumenta di 3 m'))
+        baseSpeedMeters += 3
+    })
+  }
+  let finalSpeed = baseSpeedMeters + (character.value.combat.speedBonusMeters || 0)
   const status = encumbranceStatus.value
-
   if (status.includes('-3m')) finalSpeed -= 3
-
   if (status.includes('-6m')) finalSpeed -= 6
-
   return `${Math.max(0, finalSpeed)} m`
 })
 
@@ -1203,6 +1258,30 @@ const hitDicePool = computed(() => {
 
     .join(', ')
 })
+
+function initializeHitDiceResources() {
+  if (!character.value.classResources.hitDice) {
+    character.value.classResources.hitDice = {}
+    const pool = {}
+    character.value.header.classes.forEach((c) => {
+      if (c.name && c.level > 0) {
+        const die = dndHitDice[c.name]
+        if (die) {
+          const dieKey = `d${die}`
+          pool[dieKey] = (pool[dieKey] || 0) + c.level
+        }
+      }
+    })
+    Object.entries(pool).forEach(([dieType, total]) => {
+      character.value.classResources.hitDice[dieType] = {
+        total,
+        used: 0,
+        selectedForShortRest: 0,
+      }
+    })
+  }
+}
+initializeHitDiceResources()
 
 const racialTraits = computed(() => {
   const raceName = character.value.header.race
@@ -1445,33 +1524,54 @@ function doShortRest() {
 
   const resources = character.value.classResources
 
-  // Recuperare Energie (Guerriero)
+  // LOGICA CONSUMO DV
+  if (resources.hitDice) {
+    Object.entries(resources.hitDice).forEach(([dieType, dv]) => {
+      const toSpend = Math.min(dv.selectedForShortRest, dv.total - dv.used)
+      if (toSpend > 0) {
+        dv.used += toSpend
+        // Calcolo recupero PV: DV + modificatore Costituzione
+        const conMod = character.value.abilityScores.constitution
+          ? Math.floor((character.value.abilityScores.constitution.score - 10) / 2)
+          : 0
+        let totalHeal = 0
+        for (let i = 0; i < toSpend; i++) {
+          // Tira il dado vita
+          const dieNum = Number(dieType.replace('d', ''))
+          const roll = Math.floor(Math.random() * dieNum) + 1
+          totalHeal += roll + conMod
+        }
+        // Aggiorna i PV
+        character.value.combat.hp.current = Math.min(
+          character.value.combat.hp.current + totalHeal,
+          character.value.combat.hp.max,
+        )
+      }
+      dv.selectedForShortRest = 0
+    })
+  }
 
+  // Recuperare Energie (Guerriero)
   if (resources.secondWind) {
     resources.secondWind.used = false
   }
 
   // Azione Impetuosa (Guerriero)
-
   if (resources.actionSurge) {
     resources.actionSurge.used = false
   }
 
   // Incanalare Divinità (Chierico/Paladino) - Resetta gli usi
-
   if (resources.channelDivinity) {
     resources.channelDivinity.used = 0
   }
 
   // Forma Selvatica (Druido) - Resetta gli usi
-
-  // N.B. Solo il Circolo della Luna la recupera, ma per semplicità la resettiamo per tutti
-
   if (resources.wildShapeUses) {
     resources.wildShapeUses.used = 0
   }
 
-  toast.success('Privilegi da riposo breve ripristinati!')
+  toast.success('Riposo breve effettuato! DV spesi e PV recuperati.')
 }
 </script>
 
@@ -2092,6 +2192,36 @@ function doShortRest() {
             id="arcaneRecovery"
             v-model="character.classResources.arcaneRecovery.used"
           /><span>Usato</span>
+        </div>
+        <div class="resource-item full-width">
+          <label>Dadi Vita (DV) Usati nel Riposo Breve</label>
+          <div class="hit-dice-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo DV</th>
+                  <th>Totali</th>
+                  <th>Usati</th>
+                  <th>Seleziona per Riposo Breve</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(dv, dieType) in character.classResources.hitDice" :key="dieType">
+                  <td>{{ dieType }}</td>
+                  <td>{{ dv.total }}</td>
+                  <td>{{ dv.used }}</td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      :max="dv.total - dv.used"
+                      v-model.number="dv.selectedForShortRest"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -2754,8 +2884,9 @@ function doShortRest() {
       </div>
     </div>
 
-    <button v-if="adventureInfo" @click="isChatOpen = true" class="chat-fab" title="Chat con il DM">
+    <button v-if="adventureInfo" @click="openChat" class="chat-fab" title="Chat con il DM">
       💬
+      <span v-if="hasNewMessages" class="notification-badge"></span>
     </button>
 
     <PrivateChat
@@ -4636,5 +4767,17 @@ textarea {
   font-style: italic;
 
   color: #888;
+}
+/* Stile per il pallino di notifica */
+.notification-badge {
+  position: absolute;
+  top: 5px; /* Posizionalo in alto */
+  right: 5px; /* Posizionalo a destra */
+  width: 15px;
+  height: 15px;
+  background-color: #ff3b30; /* Rosso acceso */
+  border-radius: 50%;
+  border: 2px solid white; /* Bordo per staccarlo dallo sfondo */
+  box-shadow: 0 0 5px rgba(255, 0, 0, 0.7); /* Effetto alone */
 }
 </style>

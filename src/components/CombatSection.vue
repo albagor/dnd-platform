@@ -44,6 +44,8 @@ function addWeapon() {
     ...weaponData,
     id: Date.now(),
     enhancementBonus: 0,
+    manualToHitBonus: 0, // <-- AGGIUNGI
+    manualDamageBonus: 0, // <-- AGGIUNGI
     isTwoHanding: false,
     ammunition: weaponData.properties.some((p) => p.startsWith('munizioni')) ? 20 : null,
   }
@@ -62,6 +64,8 @@ function addCustomWeapon() {
     ...newCustomWeapon.value,
     id: Date.now(),
     enhancementBonus: 0,
+    manualToHitBonus: 0, // <-- AGGIUNGI
+    manualDamageBonus: 0, // <-- AGGIUNGI
     isTwoHanding: false,
     ammunition: null,
   }
@@ -134,10 +138,34 @@ function addCustomWeapon() {
           <div class="weapon-properties">{{ weapon.properties.join(', ') }}</div>
         </div>
 
-        <div class="stat-block-compact">+{{ getToHitBonus(weapon) }}</div>
+        <div class="stat-block-compact with-manual-input">
+          <span>+{{ getToHitBonus(weapon) + (Number(weapon.manualToHitBonus) || 0) }}</span>
+          <div class="manual-bonus-wrapper">
+            <input
+              type="number"
+              class="manual-bonus-input"
+              v-model.number="weapon.manualToHitBonus"
+              title="Bonus manuale al colpire"
+            />
+          </div>
+        </div>
 
-        <div class="stat-block-compact damage-type" :data-damage-type="weapon.damageType">
-          {{ getWeaponDamageDie(weapon) }} + {{ getDamageBonus(weapon) }}
+        <div
+          class="stat-block-compact with-manual-input damage-type"
+          :data-damage-type="weapon.damageType"
+        >
+          <span
+            >{{ getWeaponDamageDie(weapon) }} +
+            {{ getDamageBonus(weapon) + (Number(weapon.manualDamageBonus) || 0) }}</span
+          >
+          <div class="manual-bonus-wrapper">
+            <input
+              type="number"
+              class="manual-bonus-input"
+              v-model.number="weapon.manualDamageBonus"
+              title="Bonus manuale al danno"
+            />
+          </div>
         </div>
 
         <div class="weapon-actions">
@@ -202,6 +230,40 @@ function addCustomWeapon() {
 </template>
 
 <style scoped>
+.with-manual-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.with-manual-input > span {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+.manual-bonus-wrapper {
+  display: flex;
+  align-items: center;
+}
+.manual-bonus-wrapper::before {
+  content: '+';
+  font-size: 0.8em;
+  margin-right: 2px;
+  color: #555;
+}
+.manual-bonus-input {
+  width: 35px;
+  text-align: center;
+  font-size: 0.8em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  -moz-appearance: textfield;
+}
+.manual-bonus-input::-webkit-outer-spin-button,
+.manual-bonus-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
 .combat-section {
   display: flex;
   flex-direction: column;

@@ -1,9 +1,9 @@
 import { useDiceStore } from '@/stores/diceStore'
 import { useToast } from 'vue-toastification'
-import { toRefs, computed } from 'vue' // Aggiungi 'computed'
-import { useAdventureStore } from '@/stores/adventureStore' // NUOVO
-import { useSessionStore } from '@/stores/sessionStore' // NUOVO
-import { storeToRefs } from 'pinia' // NUOVO
+import { toRefs, computed } from 'vue'
+import { useAdventureStore } from '@/stores/adventureStore'
+import { useSessionStore } from '@/stores/sessionStore'
+import { storeToRefs } from 'pinia'
 
 export function useCombat(props) {
   const { character, abilityModifiers, proficiencyBonus } = toRefs(props)
@@ -11,7 +11,6 @@ export function useCombat(props) {
   const diceStore = useDiceStore()
   const toast = useToast()
 
-  // --- NUOVO: Logica per trovare l'ID dell'avventura attiva ---
   const adventureStore = useAdventureStore()
   const sessionStore = useSessionStore()
   const { activeAdventureId: dmAdventureId } = storeToRefs(adventureStore)
@@ -23,7 +22,6 @@ export function useCombat(props) {
       return playerSession.value.adventureId
     return null
   })
-  // --- FINE NUOVA LOGICA ---
 
   const getClassLevel = (className) =>
     character.value.header.classes.find((c) => c.name === className)?.level || 0
@@ -46,18 +44,20 @@ export function useCombat(props) {
   }
 
   const getAttackAbilityMod = (weapon, ability) => {
-    if (weapon.category.includes('Distanza')) return ability.dexterity
-    if (weapon.properties.includes('finesse')) return Math.max(ability.strength, ability.dexterity)
+    // La proprietà "finesse" o se l'arma è a distanza permette di usare la Destrezza
+    const canUseDex = weapon.properties.includes('finesse') || weapon.category.includes('Distanza')
+    if (canUseDex) {
+      return Math.max(ability.strength, ability.dexterity)
+    }
     return ability.strength
   }
 
   const getToHitBonus = (weapon) => {
     const enhancementBonus = weapon.enhancementBonus || 0
-    return (
-      getAttackAbilityMod(weapon, abilityModifiers.value) +
-      proficiencyBonus.value +
-      enhancementBonus
-    )
+    // Assicuriamoci che proficiencyBonus.value sia un numero
+    const profBonus = Number(proficiencyBonus.value) || 0
+
+    return getAttackAbilityMod(weapon, abilityModifiers.value) + profBonus + enhancementBonus
   }
 
   const getDamageBonus = (weapon) => {
@@ -77,45 +77,52 @@ export function useCombat(props) {
     }
     const versatileProp = weapon.properties.find((p) => p.startsWith('versatile'))
     if (versatileProp && weapon.isTwoHanding) {
-      return versatileProp.match(/\(([^)]+)\)/)[1]
+      const match = versatileProp.match(/\(([^)]+)\)/)
+      if (match && match[1]) return match[1]
     }
     return weapon.damage
   }
 
   const makeAttackRoll = (weapon) => {
-    // MODIFICATO: Aggiunto controllo sull'avventura attiva
     if (!activeAdventureId.value) {
       toast.error('Nessuna avventura attiva per registrare il tiro!')
       return
     }
     const txcBonus = getToHitBonus(weapon)
-    const d20Result = Math.floor(Math.random() * 20) + 1
-    const total = d20Result + txcBonus
-    const description = `TxC ${weapon.name}: ${total} (d20: ${d20Result} + ${txcBonus})`
+    const finalBonus = txcBonus + (Number(weapon.manualToHitBonus) || 0)
 
-    // MODIFICATO: Passiamo l'ID dell'avventura allo store
+    const d20Result = Math.floor(Math.random() * 20) + 1
+    const total = d20Result + finalBonus
+    const description = `TxC ${weapon.name}: ${total} (d20: ${d20Result} + ${finalBonus})`
+
     diceStore.addRoll(20, total, description, activeAdventureId.value)
     toast.info(description)
     if (weapon.ammunition > 0) weapon.ammunition--
   }
 
   const makeDamageRoll = (weapon) => {
-    // MODIFICATO: Aggiunto controllo sull'avventura attiva
     if (!activeAdventureId.value) {
       toast.error('Nessuna avventura attiva per registrare il tiro!')
       return
     }
     const damageBonus = getDamageBonus(weapon)
-    const damageDie = getWeaponDamageDie(weapon)
-    const [diceCount, diceSides] = damageDie.split('d').map(Number)
-    let diceResult = 0
-    for (let i = 0; i < diceCount; i++) {
-      diceResult += Math.floor(Math.random() * diceSides) + 1
-    }
-    const total = diceResult + damageBonus
-    const description = `Danno ${weapon.name}: ${total} (${damageDie}: ${diceResult} + ${damageBonus})`
+    const finalBonus = damageBonus + (Number(weapon.manualDamageBonus) || 0)
 
-    // MODIFICATO: Passiamo l'ID dell'avventura allo store
+    const damageDie = getWeaponDamageDie(weapon)
+    const diceParts = damageDie.split('d')
+    const diceCount = diceParts.length > 1 ? Number(diceParts[0]) : 1
+    const diceSides = Number(diceParts[diceParts.length - 1])
+
+    let diceResult = 0
+    if (!isNaN(diceCount) && !isNaN(diceSides)) {
+      for (let i = 0; i < diceCount; i++) {
+        diceResult += Math.floor(Math.random() * diceSides) + 1
+      }
+    }
+
+    const total = diceResult + finalBonus
+    const description = `Danno ${weapon.name}: ${total} (${damageDie}: ${diceResult} + ${finalBonus})`
+
     diceStore.addRoll(diceSides, total, description, activeAdventureId.value)
     toast.success(description)
   }
